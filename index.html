@@ -1,0 +1,2869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Market Monitor</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap');
+
+:root{
+  --bg:#090b0e;
+  --bg-elevated:#0d1014;
+  --panel:#12161c;
+  --panel2:#171c23;
+  --panel-hover:#1c222b;
+  --line:#1f2630;
+  --line-strong:#2a3340;
+  --text:#eef1f4;
+  --dim:#8b95a1;
+  --dim2:#5a6570;
+  --amber:#f0a83a;
+  --amber-soft:rgba(240,168,58,0.14);
+  --green:#3dd68c;
+  --green-soft:rgba(61,214,140,0.12);
+  --red:#ef5f5f;
+  --gold:#e8c93d;
+  --fuchsia:#d84fd8;
+  --blue:#1e88e5;
+  --cyan:#00e5ff;
+  --radius:8px;
+  --radius-sm:6px;
+  --shadow:0 1px 0 rgba(255,255,255,0.03) inset, 0 8px 24px rgba(0,0,0,0.25);
+  --mono:'IBM Plex Mono','SF Mono',Consolas,monospace;
+  --sans:'Inter','Helvetica Neue',Arial,sans-serif;
+}
+
+*{box-sizing:border-box;}
+html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+  font-size:14px;
+  line-height:1.45;
+  min-height:100vh;
+}
+
+.wrap{
+  max-width:1600px;
+  margin:0 auto;
+  padding:28px 32px 72px;
+}
+
+/* ── Sticky header ── */
+.sticky-head{
+  position:sticky;
+  top:0;
+  z-index:50;
+  background:linear-gradient(180deg, var(--bg) 85%, transparent);
+  padding-top:8px;
+  margin-top:-8px;
+  padding-bottom:4px;
+}
+
+header{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  border-bottom:1px solid var(--line);
+  padding-bottom:18px;
+  margin-bottom:20px;
+}
+header h1{
+  font-family:var(--mono);
+  font-size:18px;
+  font-weight:600;
+  letter-spacing:0.6px;
+  margin:0;
+  color:var(--text);
+}
+header h1 span{color:var(--amber);}
+header .sub{
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--dim2);
+  margin-top:6px;
+  letter-spacing:0.2px;
+}
+header .count{
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--dim);
+  text-align:right;
+  letter-spacing:0.3px;
+}
+header .count b{
+  color:var(--green);
+  font-size:18px;
+  font-weight:600;
+  display:block;
+  letter-spacing:0;
+  line-height:1.2;
+}
+
+/* ── Stats strip ── */
+.stats{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:1px;
+  background:var(--line);
+  border:1px solid var(--line);
+  margin-bottom:20px;
+  border-radius:var(--radius);
+  overflow:hidden;
+  box-shadow:var(--shadow);
+}
+@media(min-width:1100px){.stats{grid-template-columns:repeat(10,1fr);}}
+.stat{
+  background:var(--panel);
+  padding:16px 18px;
+  transition:background 0.15s ease;
+}
+.stat:hover{background:var(--panel2);}
+.stat .label{
+  font-family:var(--mono);
+  font-size:10px;
+  text-transform:uppercase;
+  letter-spacing:0.9px;
+  color:var(--dim2);
+  margin-bottom:8px;
+  font-weight:500;
+}
+.stat .value{
+  font-family:var(--mono);
+  font-size:20px;
+  font-weight:600;
+  letter-spacing:-0.3px;
+  color:var(--text);
+}
+.stat .value.pos{color:var(--green);}
+.stat .value.neg{color:var(--red);}
+.stat .value.stat-secondary{
+  margin-top:3px;
+  font-size:11px;
+  line-height:1.2;
+  font-weight:400;
+  color:var(--dim);
+  letter-spacing:0;
+}
+
+
+/* ── Search / action bar ── */
+.searchbar{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  align-items:center;
+  margin-bottom:16px;
+}
+.searchbar input[type=text]{
+  background:var(--panel);
+  border:1px solid var(--line-strong);
+  color:var(--text);
+  padding:9px 14px;
+  border-radius:var(--radius-sm);
+  font-family:var(--mono);
+  font-size:12.5px;
+  transition:border-color 0.15s, box-shadow 0.15s;
+  outline:none;
+}
+.searchbar input[type=text]:focus{
+  border-color:var(--amber);
+  box-shadow:0 0 0 3px var(--amber-soft);
+}
+.searchbar input[type=text]::placeholder{color:var(--dim2);}
+.searchbar button{
+  background:var(--panel2);
+  border:1px solid var(--line-strong);
+  color:var(--dim);
+  padding:9px 14px;
+  border-radius:var(--radius-sm);
+  font-family:var(--mono);
+  font-size:11.5px;
+  font-weight:500;
+  cursor:pointer;
+  transition:color 0.12s, border-color 0.12s, background 0.12s;
+  letter-spacing:0.2px;
+}
+.searchbar button:hover{
+  color:var(--text);
+  border-color:#3d4856;
+  background:var(--panel-hover);
+}
+.searchbar button.active{
+  color:var(--bg);
+  background:var(--amber);
+  border-color:var(--amber);
+  font-weight:600;
+}
+.highlight-legend{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+.highlight-chip{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--text);
+  background:var(--panel);
+  border:1px solid var(--line-strong);
+  padding:4px 10px;
+  border-radius:999px;
+}
+.highlight-chip .dot{
+  width:8px;height:8px;border-radius:50%;flex:none;
+}
+
+/* ── Metric filters ── */
+.controls{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-bottom:16px;
+  align-items:center;
+}
+.controls input[type=text]{
+  background:var(--panel);
+  border:1px solid var(--line-strong);
+  color:var(--text);
+  padding:9px 12px;
+  border-radius:var(--radius-sm);
+  font-family:var(--mono);
+  font-size:12.5px;
+  width:110px;
+  outline:none;
+}
+.controls input[type=text]::placeholder{color:var(--dim2);}
+.controls input[type=text]:focus{
+  border-color:var(--amber);
+  box-shadow:0 0 0 3px var(--amber-soft);
+}
+.controls .filter-group{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  padding:5px 12px;
+  border-radius:var(--radius-sm);
+  transition:border-color 0.15s;
+}
+.controls .filter-group:focus-within{
+  border-color:var(--line-strong);
+}
+.controls .filter-group label{
+  font-family:var(--mono);
+  font-size:10.5px;
+  color:var(--dim);
+  font-weight:500;
+  letter-spacing:0.3px;
+  white-space:nowrap;
+}
+.controls .filter-group input[type=number],
+.controls .filter-group input[type=text]{
+  width:72px;
+  background:transparent;
+  border:none;
+  color:var(--text);
+  font-family:var(--mono);
+  font-size:12px;
+  text-align:right;
+  padding:4px 0;
+  box-shadow:none;
+}
+.controls .filter-group input:focus{box-shadow:none;}
+.controls button{
+  background:var(--panel2);
+  border:1px solid var(--line-strong);
+  color:var(--dim);
+  padding:9px 14px;
+  border-radius:var(--radius-sm);
+  font-family:var(--mono);
+  font-size:11.5px;
+  cursor:pointer;
+  transition:color 0.12s, border-color 0.12s;
+}
+.controls button:hover{color:var(--text);border-color:#3d4856;}
+
+/* ── Tabs ── */
+.tabs{
+  display:flex;
+  gap:2px;
+  margin-bottom:16px;
+  border-bottom:1px solid var(--line);
+}
+.tab{
+  font-family:var(--mono);
+  font-size:12px;
+  font-weight:500;
+  color:var(--dim);
+  padding:10px 18px;
+  cursor:pointer;
+  border-bottom:2px solid transparent;
+  margin-bottom:-1px;
+  transition:color 0.12s, border-color 0.12s;
+  letter-spacing:0.3px;
+}
+.tab:hover{color:var(--text);}
+.tab.active{
+  color:var(--amber);
+  border-bottom-color:var(--amber);
+}
+
+/* ── Table ── */
+.tablewrap{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  overflow:auto;
+  max-height:72vh;
+  box-shadow:var(--shadow);
+}
+table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  font-family:var(--mono);
+  font-size:11px;
+}
+thead th{
+  text-align:center;
+  vertical-align:middle;
+  padding:9px 14px;
+  background:var(--panel2);
+  color:var(--dim);
+  font-weight:500;
+  font-size:10.5px;
+  text-transform:uppercase;
+  letter-spacing:0.55px;
+  border-bottom:1px solid var(--line);
+  cursor:pointer;
+  white-space:nowrap;
+  user-select:none;
+  transition:color 0.12s;
+}
+thead tr:first-child th,
+thead tr.hdr-row-groups th{
+  padding:8px 14px 7px;
+  font-size:9.5px;
+  letter-spacing:0.7px;
+  color:var(--dim2);
+  position:sticky;
+  top:0;
+  z-index:20;
+}
+thead tr.hdr-row-labels th{
+  position:sticky;
+  top:var(--thead-row1-h,30px);
+  z-index:20;
+}
+thead tr.hdr-row-filters th{
+  position:sticky;
+  top:var(--thead-row2-h,58px);
+  z-index:20;
+  background:var(--panel2);
+  padding:4px 6px 6px;
+  cursor:default;
+  border-bottom:1px solid var(--line);
+}
+/* Fallback for 2-row headers (portfolio / no filters) */
+thead:not(.has-filters) tr:last-child th{
+  position:sticky;
+  top:var(--thead-row1-h,30px);
+  z-index:20;
+}
+#theadDecile th{position:sticky;top:0;}
+.decile-pair{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:2px;
+  line-height:1.2;
+}
+.decile-pair .primary{
+  color:var(--text);
+  font-weight:500;
+}
+.decile-pair .secondary{
+  color:var(--dim2);
+  font-size:10px;
+}
+thead tr:first-child th.group-hdr{
+  text-align:center;
+  border-bottom:1px solid var(--line);
+  border-left:1px solid var(--line);
+}
+thead tr:first-child th.group-hdr:first-of-type{border-left:none;}
+thead th.group-gold{color:var(--gold);}
+thead th.group-fuchsia{color:var(--fuchsia);}
+thead tr.hdr-row-labels th.sub-gold{box-shadow:inset 0 -2px 0 var(--gold);}
+thead:not(.has-filters) tr:last-child th.sub-gold{box-shadow:inset 0 -2px 0 var(--gold);}
+thead tr.hdr-row-labels th.sub-fuchsia{box-shadow:inset 0 -2px 0 var(--fuchsia);}
+thead:not(.has-filters) tr:last-child th.sub-fuchsia{box-shadow:inset 0 -2px 0 var(--fuchsia);}
+thead th:hover{color:var(--text);}
+thead th.sorted{color:var(--amber)!important;}
+thead th.sticky-col{
+  position:sticky;left:0;z-index:30;
+  background:var(--panel2);
+  box-shadow:2px 0 6px rgba(0,0,0,0.4);
+}
+tbody td.sticky-col{
+  position:sticky;left:0;z-index:4;
+  background:var(--panel);
+  box-shadow:2px 0 6px rgba(0,0,0,0.4);
+}
+tbody tr:hover td.sticky-col{background:var(--panel-hover);}
+tbody td{
+  padding:9px 14px;
+  text-align:center;
+  border-bottom:1px solid var(--line);
+  white-space:nowrap;
+  color:var(--dim);
+}
+tbody td:first-child{
+  text-align:center;
+  font-weight:600;
+  color:var(--text);
+}
+tbody tr:hover{background:var(--panel-hover);}
+tbody tr:last-child td{border-bottom:none;}
+
+.elite-dot{
+  display:inline-block;
+  width:0.5em;height:0.5em;
+  border-radius:50%;
+  vertical-align:middle;
+  margin-right:5px;
+}
+
+.searchbar .color-filter-btn{
+  width:15px;height:15px;min-width:0;
+  border-radius:50%;
+  cursor:pointer;
+  border:2px solid transparent;
+  padding:0;margin:0;
+  box-sizing:content-box;
+  transition:transform 0.12s, border-color 0.12s, box-shadow 0.12s;
+}
+.color-filter-btn:hover{transform:scale(1.18);}
+.color-filter-btn.active{
+  border-color:#ffffff;
+  box-shadow:0 0 0 2px rgba(255,255,255,0.15);
+}
+
+.pos{color:var(--green);}
+.neg{color:var(--red);}
+.na{color:var(--dim2);}
+
+/* ── Pager ── */
+.pager{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 6px;
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--dim);
+}
+.pager button{
+  background:var(--panel2);
+  border:1px solid var(--line-strong);
+  color:var(--dim);
+  padding:7px 14px;
+  border-radius:var(--radius-sm);
+  cursor:pointer;
+  font-family:var(--mono);
+  font-size:12px;
+  transition:color 0.12s, border-color 0.12s;
+}
+.pager button:disabled{opacity:0.35;cursor:default;}
+.pager button:not(:disabled):hover{color:var(--text);border-color:#3d4856;}
+
+/* ── Charts ── */
+.chartgrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+@media(max-width:900px){.chartgrid{grid-template-columns:1fr;}}
+.chartbox{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:18px;
+  box-shadow:var(--shadow);
+}
+.chartbox h3{
+  font-family:var(--mono);
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:0.7px;
+  color:var(--dim);
+  margin:0 0 14px;
+  font-weight:500;
+}
+.chart-canvas-wrap{position:relative;height:320px;width:100%;}
+canvas{width:100%!important;}
+
+footer{
+  margin-top:28px;
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--dim2);
+  text-align:center;
+  letter-spacing:0.2px;
+}
+
+/* Export modal polish */
+#exportModalOverlay > div{
+  box-shadow:0 24px 64px rgba(0,0,0,0.55);
+}
+
+/* Embedded column filter inputs — compact, same mono scale as table */
+thead th.filter-cell{
+  vertical-align:middle;
+  text-align:center;
+  font-weight:400;
+  text-transform:none;
+  letter-spacing:0;
+}
+thead th.filter-cell input.col-filter{
+  margin-left:auto;
+  margin-right:auto;
+  display:block;
+}
+thead th.filter-cell.sticky-col{
+  left:0;
+  z-index:31;
+  background:var(--panel2);
+  box-shadow:2px 0 6px rgba(0,0,0,0.4);
+}
+input.col-filter{
+  width:100%;
+  min-width:0;
+  max-width:88px;
+  box-sizing:border-box;
+  background:var(--bg);
+  border:1px solid var(--line-strong);
+  color:var(--text);
+  font-family:var(--mono);
+  font-size:10.5px;
+  font-weight:400;
+  padding:3px 5px;
+  border-radius:4px;
+  text-align:center;
+  outline:none;
+  letter-spacing:0;
+  text-transform:none;
+}
+input.col-filter::placeholder{
+  color:var(--dim2);
+  font-size:10px;
+  letter-spacing:0;
+  text-transform:none;
+}
+input.col-filter:focus{
+  border-color:var(--amber);
+  box-shadow:0 0 0 2px var(--amber-soft);
+}
+
+/* WoW Grade filter suggestions dropdown */
+.wow-suggest-wrap{
+  position:relative;
+  display:block;
+  width:100%;
+  max-width:88px;
+  margin:0 auto;
+}
+.wow-suggest-menu{
+  display:none;
+  position:absolute;
+  top:100%;
+  left:50%;
+  transform:translateX(-50%);
+  min-width:168px;
+  margin-top:4px;
+  background:var(--panel2);
+  border:1px solid var(--line-strong);
+  border-radius:var(--radius-sm);
+  box-shadow:0 8px 24px rgba(0,0,0,0.45);
+  z-index:40;
+  padding:4px 0;
+  font-family:var(--mono);
+  font-size:11px;
+}
+.wow-suggest-menu.open{display:block;}
+.wow-suggest-item{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 12px;
+  cursor:pointer;
+  color:var(--dim);
+  white-space:nowrap;
+  transition:background 0.1s, color 0.1s;
+}
+.wow-suggest-item:hover{
+  background:var(--panel-hover);
+  color:var(--text);
+}
+.wow-suggest-item .swatch{
+  width:8px;height:8px;border-radius:50%;flex:none;
+}
+.wow-suggest-item .hint{
+  color:var(--dim2);
+  font-size:10px;
+  margin-left:auto;
+}
+
+/* Tighten Margins (LTM) columns so R40 stays in view */
+thead th[data-key="ROIC"],
+thead th[data-key="FCF"],
+thead th[data-key="EBIT"],
+tbody td:nth-child(4),
+tbody td:nth-child(5),
+tbody td:nth-child(6){
+  max-width:72px;
+  width:72px;
+  padding-left:6px;
+  padding-right:6px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+thead th.filter-cell[data-key="ROIC"] input.col-filter,
+thead th.filter-cell[data-key="FCF"] input.col-filter,
+thead th.filter-cell[data-key="EBIT"] input.col-filter{
+  max-width:64px;
+}
+
+/* Composite Score: compact two-line header, fully centered */
+thead th.col-compscore,
+thead th[data-key="CompScore"]{
+  max-width:70px;
+  width:70px;
+  padding-left:6px;
+  padding-right:6px;
+  white-space:normal;
+  line-height:1.25;
+  vertical-align:middle;
+  text-align:center;
+}
+thead th.filter-cell[data-key="CompScore"]{
+  text-align:center;
+  vertical-align:middle;
+}
+thead th.filter-cell[data-key="CompScore"] input.col-filter{
+  max-width:62px;
+  margin:0 auto;
+  display:block;
+}
+tbody td:nth-child(3){
+  max-width:70px;
+  width:70px;
+  padding-left:6px;
+  padding-right:6px;
+  text-align:center;
+  vertical-align:middle;
+}
+
+/* All table data is centered horizontally and vertically. */
+table th,
+table td{
+  text-align:center;
+  vertical-align:middle;
+}
+
+/* FWD final grade: compact two-line header to reduce column width. */
+thead th[data-key="FwdR"]{
+  width:68px;
+  max-width:68px;
+  white-space:normal;
+  line-height:1.15;
+  padding-left:5px;
+  padding-right:5px;
+}
+
+/* Body numbers just slightly above header label size (10.5px) */
+table{
+  font-size:11px;
+}
+tbody td{
+  font-size:11px;
+  padding-top:6px;
+  padding-bottom:6px;
+  vertical-align:middle;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="sticky-head">
+    <header>
+      <div>
+        <h1>MARKET<span>_</span>MONITOR</h1>
+        <div class="sub">All-market fundamentals &amp; forward-estimate screener &middot; live QUERY sheet</div>
+      </div>
+      <div class="count"><b id="countVal">0 / 0</b>tickers shown</div>
+    </header>
+
+    <div class="stats" id="statsRow"></div>
+
+    <div class="searchbar">
+      <input type="text" id="search" placeholder="Search / highlight ticker(s), e.g. AAPL, MSFT or ZYME" style="width:340px;">
+      <button id="presetBtn" title="Every metric &ge; its median; valuation uses EV/EBIT (if EBIT margin &gt; 3%) or EV/S (if &le; 3%), which must be &le; its mean">Quality Screen (Median/Mean)</button>
+      <button id="ratingBtn" title="QUANT FWD RATING strictly above its median">Rating Screen (Fwd &gt; Median)</button>
+      <span style="display:inline-flex;border:1px solid var(--line);border-radius:5px;overflow:hidden;">
+        <button id="viewRawBtn" class="active" title="Show actual metric values" style="border:none;border-radius:0;">Raw Data</button>
+        <button id="viewPctBtn" title="Show each value's percentile rank vs. the current dataset" style="border:none;border-radius:0;border-left:1px solid var(--line);">Percentile</button>
+      </span>
+      <button id="resetBtn" title="Clear all metric column filters">Reset Filters</button>
+      <button id="exportBtn" title="Copy a comma-separated list of every ticker currently matching your filters">Export Tickers</button>
+      <button id="refreshDataBtn" title="Re-fetch the latest data from the configured public URL">Refresh Data</button>
+      <span id="dataLoadStatus" class="na" style="font-family:var(--mono);font-size:11px;margin-left:6px;"></span>
+      <span id="colorFilters" style="display:inline-flex;align-items:center;gap:8px;"></span>
+      <div id="highlightLegend" class="highlight-legend"></div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="table">Screener</div>
+      <div class="tab" data-tab="charts">Charts</div>
+      <div class="tab" data-tab="portfolio">Portfolio</div>
+      <div class="tab" data-tab="deciles">Percentiles</div>
+    </div>
+  </div>
+
+  <div id="tableView">
+    <div class="tablewrap">
+      <table>
+        <thead id="thead"></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="pager">
+        <span id="pageInfo"></span>
+        <div>
+          <button id="prevBtn">&larr; Prev</button>
+          <button id="nextBtn">Next &rarr;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="chartView" style="display:none;">
+    <div class="chartgrid">
+      <div class="chartbox"><h3>EV/S vs Revenue Est YoY % (FY1E)</h3><div class="chart-canvas-wrap"><canvas id="scatterChart"></canvas></div></div>
+      <div class="chartbox"><h3>PE vs EPS Est YoY % (FY1E)</h3><div class="chart-canvas-wrap"><canvas id="scatterChart2"></canvas></div></div>
+
+      <div class="chartbox"><h3>ROIC Distribution</h3><div class="chart-canvas-wrap"><canvas id="roicHist"></canvas></div></div>
+      <div class="chartbox"><h3>FCF Margin Distribution</h3><div class="chart-canvas-wrap"><canvas id="fcfHist"></canvas></div></div>
+
+      <div class="chartbox"><h3>Revenue Est YoY % (FY1E) Distribution</h3><div class="chart-canvas-wrap"><canvas id="revHist"></canvas></div></div>
+      <div class="chartbox"><h3>Revenue Est YoY % (FY2E) Distribution</h3><div class="chart-canvas-wrap"><canvas id="revHist2"></canvas></div></div>
+
+      <div class="chartbox"><h3>EPS Est YoY % (FY1E) Distribution</h3><div class="chart-canvas-wrap"><canvas id="epsHist"></canvas></div></div>
+      <div class="chartbox"><h3>EPS Est YoY % (FY2E) Distribution</h3><div class="chart-canvas-wrap"><canvas id="epsHist2"></canvas></div></div>
+
+      <div class="chartbox"><h3>Revenues FY1E - 3M Distribution</h3><div class="chart-canvas-wrap"><canvas id="rev3mHist"></canvas></div></div>
+      <div class="chartbox"><h3>Revenues FY2E - 3M Distribution</h3><div class="chart-canvas-wrap"><canvas id="rev3mHist2"></canvas></div></div>
+    </div>
+  </div>
+
+  <div id="portfolioView" style="display:none;">
+    <div class="controls">
+      <div class="filter-group" style="gap:8px;">
+        <label>Add ticker(s)</label>
+        <input type="text" id="fPortfolioAdd" placeholder="e.g. AAPL, MSFT NVDA" style="width:260px;">
+      </div>
+      <button id="portfolioAddBtn">Add to Portfolio</button>
+      <button id="portfolioSaveBtn">💾 Save Portfolio</button>
+      <button id="portfolioClearBtn">Clear Portfolio</button>
+      <span id="portfolioSaveStatus" class="na" style="font-family:var(--mono);font-size:11px;align-self:center;"></span>
+      <div id="portfolioChips" class="highlight-legend"></div>
+    </div>
+    <div style="font-family:var(--mono);font-size:10.5px;letter-spacing:0.6px;text-transform:uppercase;color:var(--dim2);margin:4px 0 6px;">Portfolio Median vs. Screener Median</div>
+    <div class="stats" id="portfolioStatsRow" style="margin-bottom:12px;"></div>
+    <div class="tablewrap">
+      <table>
+        <thead id="theadPortfolio"></thead>
+        <tbody id="tbodyPortfolio"></tbody>
+      </table>
+      <div id="portfolioEmpty" class="na" style="padding:24px;text-align:center;font-family:var(--mono);font-size:12.5px;">
+        No tickers yet — add symbols above to build your custom portfolio view.
+      </div>
+    </div>
+  </div>
+
+  <div id="decileView" style="display:none;">
+    <div style="font-family:var(--mono);font-size:10.5px;letter-spacing:0.6px;text-transform:uppercase;color:var(--dim2);margin:0 0 8px;">
+      Percentile Thresholds — lower numerical bound of each 5-point percentile bracket, per metric
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin:0 0 12px;font-family:var(--mono);font-size:11px;color:var(--dim);">
+      <span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:2px;background:var(--text);display:inline-block;"></span> Ex-asterisk (primary)</span>
+      <span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:2px;background:var(--dim2);display:inline-block;"></span> Asterisk-only (secondary)</span>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead id="theadDecile"></thead>
+        <tbody id="tbodyDecile"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="exportModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:100;align-items:center;justify-content:center;">
+    <div style="background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:20px;width:min(560px,90vw);max-height:80vh;display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h3 style="margin:0;font-family:var(--mono);font-size:14px;color:var(--text);">Export Tickers</h3>
+        <button id="exportCloseBtn" style="background:none;border:none;color:var(--dim);font-size:18px;cursor:pointer;padding:0 4px;">&times;</button>
+      </div>
+      <div id="exportCount" class="na" style="font-family:var(--mono);font-size:11.5px;"></div>
+      <textarea id="exportTextarea" readonly style="width:100%;min-height:160px;max-height:45vh;background:var(--bg);border:1px solid var(--line);border-radius:5px;color:var(--text);font-family:var(--mono);font-size:12.5px;padding:10px;resize:vertical;" onclick="this.select()"></textarea>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button id="exportCopyBtn">Copy to Clipboard</button>
+        <button id="exportCloseBtn2">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>Source: public data URL (QUERY sheet) &middot; Fetched client-side via fetch() &middot; Hosted as static HTML &middot; Data may include screening artifacts / outliers</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script>
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DATA SOURCE CONFIGURATION
+// Replace DATA_URL with a publicly accessible URL to your Excel (.xlsx) or CSV file.
+//
+// OneDrive / Excel Online recommendations (free, no backend):
+//   1. Preferred for reliability: Export the QUERY sheet as CSV, upload the CSV
+//      to a CORS-friendly host (GitHub raw URL, Cloudflare R2 public, etc.), or
+//      paste the data into a Google Sheet and use File → Share → Publish to web
+//      → CSV. Google published CSV URLs work reliably with fetch().
+//   2. Direct OneDrive .xlsx: Share the workbook as "Anyone with the link can
+//      view", then obtain a direct download/content URL. Note that many OneDrive
+//      share links block cross-origin fetch (CORS). If fetch fails, fall back to
+//      the CSV approach above.
+//   3. After changing the source workbook, simply reload this page (or click
+//      Refresh Data) to pull the latest values. No server required.
+//
+// Hosting this HTML for free: GitHub Pages, Netlify, Cloudflare Pages, or any
+// static host. Place this single HTML file (or the folder) on the host.
+// ═══════════════════════════════════════════════════════════════════════════
+const DATA_URL = "https://raw.githubusercontent.com/ivandeabreu/market-monitor-data/main/06_INV_MONITOR_00-QUERY.csv"; // <-- public CSV URL
+const SHEET_NAME = "QUERY"; // Excel sheet name; ignored for pure CSV sources
+
+let RAW = [];
+let data = [];
+let dataLoadError = null;
+
+async function fetchRawData(url) {
+  if (!url || !url.trim()) {
+    throw new Error("DATA_URL is empty. Set it to a public Excel or CSV URL.");
+  }
+  const response = await fetch(url.trim(), { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error("HTTP " + response.status + " while fetching " + url);
+  }
+  const contentType = (response.headers.get("content-type") || "").toLowerCase();
+  const isCsv = url.toLowerCase().includes(".csv") || contentType.includes("text/csv") || contentType.includes("text/plain");
+  if (isCsv) {
+    const text = await response.text();
+    return parseCsvToObjects(text);
+  }
+  // Assume Excel / binary workbook
+  const ab = await response.arrayBuffer();
+  if (typeof XLSX === "undefined") {
+    throw new Error("SheetJS (XLSX) library failed to load from CDN.");
+  }
+  const workbook = XLSX.read(ab, { type: "array", cellDates: false });
+  const name = (SHEET_NAME && workbook.SheetNames.includes(SHEET_NAME))
+    ? SHEET_NAME
+    : workbook.SheetNames[0];
+  if (!name) throw new Error("Workbook contains no sheets.");
+  const sheet = workbook.Sheets[name];
+  const rows = XLSX.utils.sheet_to_json(sheet, { defval: null, raw: true });
+  return normalizeRows(rows);
+}
+
+// Robust CSV parser that supports quoted fields containing newlines (Excel-style).
+function parseCsvToObjects(text) {
+  text = String(text || "").replace(/^\uFEFF/, "");
+  const rows = [];
+  let row = [], field = "", inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    const next = text[i + 1];
+    if (inQuotes) {
+      if (ch === '"' && next === '"') { field += '"'; i++; }
+      else if (ch === '"') { inQuotes = false; }
+      else { field += ch; }
+    } else {
+      if (ch === '"') { inQuotes = true; }
+      else if (ch === ',') { row.push(field); field = ""; }
+      else if (ch === '\r') { /* skip */ }
+      else if (ch === '\n') {
+        row.push(field);
+        rows.push(row);
+        row = [];
+        field = "";
+      } else {
+        field += ch;
+      }
+    }
+  }
+  if (field.length || row.length) {
+    row.push(field);
+    rows.push(row);
+  }
+  return rowsToObjects(rows);
+}
+
+function cleanNum(v) {
+  if (v === null || v === undefined) return null;
+  if (typeof v === "number") return Number.isFinite(v) ? v : null;
+  let s = String(v).trim();
+  if (!s || s === "-" || /^n\/?a$/i.test(s) || s === "#N/A" || s === "#VALUE!") return null;
+  // Quarterly / new-name flags from the QUERY sheet — not numeric grades
+  if (/quart/i.test(s) || /^new$/i.test(s)) return null;
+  s = s.replace(/,/g, "").replace(/%/g, "").replace(/\s+/g, "");
+  if (!s) return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+
+// Convert logical CSV rows into dashboard objects.
+// Handles the specific QUERY export layout (leading empty col + multi-line headers)
+// and also clean single-line header CSVs.
+function rowsToObjects(rows) {
+  if (!rows || !rows.length) return [];
+
+  // Find the header row (contains "Ticker")
+  let headerIdx = -1;
+  for (let i = 0; i < Math.min(rows.length, 30); i++) {
+    const cells = rows[i].map(c => String(c || "").replace(/\s+/g, " ").trim().toLowerCase());
+    if (cells.some(c => c === "ticker")) {
+      headerIdx = i;
+      break;
+    }
+  }
+  if (headerIdx < 0) {
+    // Fall back: assume first non-empty row is header
+    headerIdx = 0;
+  }
+
+  const rawHeaders = rows[headerIdx].map(h => String(h || "").replace(/\s+/g, " ").trim());
+
+  // Build a map from normalized header text -> column index
+  function normHeader(h) {
+    return String(h || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  }
+  const hmap = {};
+  rawHeaders.forEach((h, idx) => {
+    const n = normHeader(h);
+    if (n) hmap[n] = idx;
+  });
+
+  // Helper: find first matching header among candidates
+  function col(...cands) {
+    for (const c of cands) {
+      const n = normHeader(c);
+      if (n in hmap) return hmap[n];
+      // partial contains
+      for (const [k, idx] of Object.entries(hmap)) {
+        if (k.includes(n) || n.includes(k)) return idx;
+      }
+    }
+    return -1;
+  }
+
+  // Explicit mappings for this QUERY export and clean variants
+  const idx = {
+    Ticker:   col("Ticker"),
+    FwdR:     col("FWD FINAL GRADE", "FwdR", "FWD R", "Final Grade"),
+    FwdRWk1:  col("FWD GRADE WK -1", "FWD GRADE WK-1", "FwdRWk1"),
+    WoWGrade: col("WoW GRADE", "WoWGrade", "WoW"),
+    ROIC:     col("ROIC (LTM)", "ROIC"),
+    FCF:      col("FCF Margin (LTM)", "FCF Margin", "FCF"),
+    EBIT:     col("EBIT Margin (LTM)", "EBIT Margin", "EBIT"),
+    EVS:      col("EV/S (NTM)", "EV/S", "EVS"),
+    EVEBIT:   col("EV/EBIT (NTM)", "EV/EBIT", "EVEBIT"),
+    PE:       col("PE (NTM)", "PE"),
+    RevY1:    col("Revenue Est YoY % (FY1E)", "RevY1", "Revenue Est YoY % FY1E"),
+    RevY2:    col("Revenue Est YoY % (FY2E)", "RevY2"),
+    RevY3:    col("Revenue Est YoY % (FY3E)", "RevY3"),
+    EpsY1:    col("EPS Est YoY % (FY1E)", "EpsY1"),
+    EpsY2:    col("EPS Est YoY % (FY2E)", "EpsY2"),
+    EpsY3:    col("EPS Est YoY % (FY3E)", "EpsY3"),
+    Rev3M:    col("Revenue Rev FY1E", "Rev3M", "Revenue Rev FY1E"),
+    Rev3M2:   col("Revenue Rev FY2E", "Rev3M2"),
+    Eps3M:    col("EPS Rev FY1E", "Eps3M"),
+    Eps3M2:   col("EPS Rev FY2E", "Eps3M2"),
+    R40FCF:   col("R40 FCF", "R40FCF"),
+    R40EBIT:  col("R40 EBIT", "R40EBIT"),
+  };
+
+  // Positional fallback for the known QUERY layout when header matching is weak
+  // (col 0 is empty, ticker is col 1, FWD FINAL GRADE is col 8, etc.)
+  const POS = {
+    Ticker: 1, FwdRWk1: 3, WoWGrade: 4, FwdR: 8,
+    ROIC: 10, FCF: 11, EBIT: 12,
+    EVS: 14, EVEBIT: 15, PE: 16,
+    RevY1: 18, RevY2: 19, RevY3: 20, EpsY1: 21, EpsY2: 22, EpsY3: 23,
+    Rev3M: 25, Rev3M2: 26, Eps3M: 27, Eps3M2: 28,
+    R40FCF: 31, R40EBIT: 32
+  };
+  for (const k of Object.keys(POS)) {
+    if (idx[k] < 0) idx[k] = POS[k];
+  }
+
+  const out = [];
+  for (let r = headerIdx + 1; r < rows.length; r++) {
+    const cells = rows[r];
+    if (!cells || !cells.length) continue;
+    const tickerRaw = (idx.Ticker >= 0 && cells[idx.Ticker] != null) ? String(cells[idx.Ticker]).trim() : "";
+    if (!tickerRaw) continue;
+    // Skip summary / non-ticker rows
+    const tUpper = tickerRaw.toUpperCase();
+    if (tUpper === "MEDIAN" || tUpper === "MEAN" || tUpper === "TICKER" || tUpper === "N" || /^\d+$/.test(tickerRaw)) continue;
+
+    // Asterisk rule (from original app): tickers whose FWD FY GRADE is the text
+    // "QUARTELY"/"QUARTERLY" (or whose prior-week grade is "NEW") are quarterly
+    // names. They are marked with a trailing * and their week-over-week grade
+    // fields are treated as missing — matching the original embedded dataset.
+    const fyRaw = (idx.FwdRWk1 >= 0 && cells[2] != null) ? String(cells[2]).trim() : "";
+    // Prefer dedicated FY-grade column when header map found it; else positional col 2
+    let fyCell = "";
+    if (idx.FwdR >= 0) {
+      // FWD FINAL is col 8; FWD FY GRADE is typically col 2 (positional)
+    }
+    const fyPos = 2; // FWD FY GRADE in QUERY layout
+    const wk1Pos = (idx.FwdRWk1 >= 0) ? idx.FwdRWk1 : 3;
+    const fyText = (fyPos < cells.length && cells[fyPos] != null) ? String(cells[fyPos]).trim() : "";
+    const wk1Text = (wk1Pos < cells.length && cells[wk1Pos] != null) ? String(cells[wk1Pos]).trim() : "";
+    const isQuarterly = /quart/i.test(fyText) || /^new$/i.test(wk1Text);
+
+    let tickerOut = tickerRaw;
+    if (isQuarterly && !tickerOut.endsWith("*") && !tickerOut.startsWith("*")) {
+      tickerOut = tickerOut + "*";
+    }
+
+    const d = { Ticker: tickerOut };
+    const numKeys = ["FwdR","FwdRWk1","WoWGrade","ROIC","FCF","EBIT","EVS","EVEBIT","PE",
+                     "RevY1","RevY2","RevY3","EpsY1","EpsY2","EpsY3",
+                     "Rev3M","Rev3M2","Eps3M","Eps3M2","R40FCF","R40EBIT"];
+    for (const k of numKeys) {
+      const ci = idx[k];
+      d[k] = (ci >= 0 && ci < cells.length) ? cleanNum(cells[ci]) : null;
+    }
+    // Match original HTML behaviour: quarterly names have no usable Wk-1 / WoW grade
+    if (isQuarterly) {
+      d.FwdRWk1 = null;
+      d.WoWGrade = null;
+    }
+    out.push(d);
+  }
+  return out;
+}
+
+// Used for .xlsx path (SheetJS already gives objects keyed by header text)
+function normalizeRows(rows) {
+  if (!rows || !rows.length) return [];
+  // Convert array-of-objects from SheetJS into the same shape via a synthetic matrix
+  const headers = Object.keys(rows[0] || {});
+  const matrix = [headers];
+  rows.forEach(obj => {
+    matrix.push(headers.map(h => obj[h]));
+  });
+  return rowsToObjects(matrix);
+}
+
+
+
+const COLS = [
+  {key:'Ticker', label:'Ticker', filterId:'fTicker'},
+  {key:'FwdR', label:'FWD FINAL<br>GRADE', fmt:'score'},
+  {key:'WoWGrade', label:'WoW<br>grade', fmt:'delta', filterId:'fWoWGrade'},
+  {key:'CompScore', label:'C SCORE', fmt:'compscore', filterId:'fCompScore'},
+  {key:'ROIC', label:'ROIC', fmt:'pct', group:'Margins (LTM)', filterId:'fROIC'},
+  {key:'FCF', label:'FCF', fmt:'pct', group:'Margins (LTM)', filterId:'fFCF'},
+  {key:'EBIT', label:'EBIT', fmt:'pct', group:'Margins (LTM)'},
+  {key:'EVS', label:'EV/S', fmt:'x', group:'Valuation (NTM)'},
+  {key:'EVEBIT', label:'EV/EBIT', fmt:'x', group:'Valuation (NTM)'},
+  {key:'PE', label:'PE', fmt:'x', group:'Valuation (NTM)', filterId:'fPE'},
+  {key:'RevY1', label:'P1', fmt:'pct', group:'Revenue Est YoY %', color:'gold', filterId:'fRevY1'},
+  {key:'RevY2', label:'P2', fmt:'pct', group:'Revenue Est YoY %', color:'gold', filterId:'fRevY2'},
+  {key:'RevY3', label:'P3', fmt:'pct', group:'Revenue Est YoY %', color:'gold', filterId:'fRevY3'},
+  {key:'EpsY1', label:'P1', fmt:'pct', group:'EPS Est YoY %', color:'fuchsia', filterId:'fEpsY1'},
+  {key:'EpsY2', label:'P2', fmt:'pct', group:'EPS Est YoY %', color:'fuchsia', filterId:'fEpsY2'},
+  {key:'EpsY3', label:'P3', fmt:'pct', group:'EPS Est YoY %', color:'fuchsia', filterId:'fEpsY3'},
+  {key:'Rev3M', label:'P1', fmt:'pct', group:'Revenue Rev', color:'gold', filterId:'fRev3M'},
+  {key:'Rev3M2', label:'P2', fmt:'pct', group:'Revenue Rev', color:'gold', filterId:'fRev3M2'},
+  {key:'Eps3M', label:'P1', fmt:'pct', group:'EPS Rev', color:'fuchsia', filterId:'fEps3M'},
+  {key:'Eps3M2', label:'P2', fmt:'pct', group:'EPS Rev', color:'fuchsia', filterId:'fEps3M2'},
+  {key:'R40FCF', label:'FCF', fmt:'r40', group:'R40', filterId:'fR40FCF'},
+  {key:'R40EBIT', label:'EBIT', fmt:'r40', group:'R40', filterId:'fR40EBIT'},
+];
+
+// Persists filter box values across header rebuilds
+const filterValues = {
+  fTicker:'', fCompScore:'', fWoWGrade:'', fPE:'', fROIC:'', fFCF:'',
+  fRevY1:'', fRevY2:'', fRevY3:'', fEpsY1:'', fEpsY2:'', fEpsY3:'',
+  fRev3M:'', fRev3M2:'', fEps3M:'', fEps3M2:'',
+  fR40FCF:'', fR40EBIT:''
+};
+function getFilterValue(id){
+  // Prefer live DOM value from either screener or portfolio filter input
+  const el = document.querySelector('input.col-filter[data-filter-id="'+id+'"]');
+  if(el) filterValues[id] = el.value;
+  return filterValues[id] || '';
+}
+function setFilterValue(id, val){
+  filterValues[id] = val;
+  document.querySelectorAll('input.col-filter[data-filter-id="'+id+'"]').forEach(el=>{ el.value = val; });
+}
+
+// data is populated asynchronously by loadAndInit()
+// let data = RAW.filter(d => d.Ticker);
+
+// ---- Logarithmic Fair-Value EV/S model: EV/S ~ a + b*ln(1 + RevYoY_FY1E) ----
+// A log trendline compresses the high-growth tail instead of letting a handful of
+// extreme growers pull a polynomial fit into overfitting sparse, noisy territory.
+function computeValuationModel(pts){
+  const n = pts.length;
+  const xbar = pts.reduce((s,p)=>s+p.x,0)/n;
+  const ybar = pts.reduce((s,p)=>s+p.y,0)/n;
+  let num=0, den=0;
+  pts.forEach(p=>{ num += (p.x-xbar)*(p.y-ybar); den += (p.x-xbar)*(p.x-xbar); });
+  const b = den!==0 ? num/den : 0;
+  const a = ybar - b*xbar;
+  return {a, b};
+}
+
+let valModel = {a:0, b:0};
+let peModel = {a:0, b:0};
+
+function fairEVS(d){
+  if(d.RevY1==null || d.RevY1<=-100) return null;
+  const fv = valModel.a + valModel.b*Math.log(1 + d.RevY1/100);
+  return fv>0 ? fv : null;
+}
+
+function fairPE(x){
+  const fv = peModel.a + peModel.b*Math.log(1 + x/100);
+  return fv>0 ? fv : null;
+}
+
+let filtered = [];
+
+// ---- Tiered growth markers: Rev & EPS estimates (FY1E and FY2E, all four) above a
+// hierarchical percentile bar. Each ticker shows at most one dot — its highest tier.
+function computePct(key, p){
+  const vals = data.filter(d=>d[key]!=null && !isAsteriskTicker(d)).map(d=>d[key]).sort((a,b)=>a-b);
+  return percentileSorted(vals, p);
+}
+function computeTierThresholds(pct){
+  const p = pct/100;
+  return {
+    RevY1: computePct('RevY1',p), RevY2: computePct('RevY2',p), RevY3: computePct('RevY3',p),
+    EpsY1: computePct('EpsY1',p), EpsY2: computePct('EpsY2',p), EpsY3: computePct('EpsY3',p)
+  };
+}
+// Non-asterisk: Rev & EPS FY1E+FY2E must clear the tier bar.
+// Asterisk only: also require Rev & EPS FY3E above the same percentile bar.
+function allAboveThresholds(d, th){
+  const base =
+    th.RevY1!=null && d.RevY1!=null && d.RevY1 > th.RevY1 &&
+    th.RevY2!=null && d.RevY2!=null && d.RevY2 > th.RevY2 &&
+    th.EpsY1!=null && d.EpsY1!=null && d.EpsY1 > th.EpsY1 &&
+    th.EpsY2!=null && d.EpsY2!=null && d.EpsY2 > th.EpsY2;
+  if(!base) return false;
+  if(!isAsteriskTicker(d)) return true;
+  return th.RevY3!=null && d.RevY3!=null && d.RevY3 > th.RevY3 &&
+         th.EpsY3!=null && d.EpsY3!=null && d.EpsY3 > th.EpsY3;
+}
+let TIER_THRESHOLDS = { p80:{}, p60:{}, p40:{}, p20:{} };
+
+// Color-coded marker categories, each with a clickable filter circle. Extensible:
+// add another {key,color,label,test} entry here and a matching button renders automatically.
+// Ordered highest-tier first; each test excludes the tier(s) above it so exactly one
+// category (or none) applies to a given ticker.
+// Thresholds are refreshed after data load via rebuildMarkerCategories().
+let MARKER_CATEGORIES = [];
+function rebuildMarkerCategories(){
+  TIER_THRESHOLDS = {
+    p80: computeTierThresholds(80),
+    p60: computeTierThresholds(60),
+    p40: computeTierThresholds(40),
+    p20: computeTierThresholds(20),
+  };
+  MARKER_CATEGORIES = [
+    {key:'p80', color:'#00E5FF', label:'P80 Elite Growers (Rev & EPS FY1E/FY2E > P80; asterisk also FY3E)',
+      test:d=>allAboveThresholds(d, TIER_THRESHOLDS.p80)},
+    {key:'p60', color:'#BA68C8', label:'P60 Tier (Rev & EPS FY1E/FY2E > P60; asterisk also FY3E)',
+      test:d=>allAboveThresholds(d, TIER_THRESHOLDS.p60) && !allAboveThresholds(d, TIER_THRESHOLDS.p80)},
+    {key:'p40', color:'#FBC02D', label:'P40 Tier (Rev & EPS FY1E/FY2E > P40; asterisk also FY3E)',
+      test:d=>allAboveThresholds(d, TIER_THRESHOLDS.p40) && !allAboveThresholds(d, TIER_THRESHOLDS.p60)},
+    {key:'p20', color:'#3ecf8e', label:'P20 Tier (Rev & EPS FY1E/FY2E > P20; asterisk also FY3E)',
+      test:d=>allAboveThresholds(d, TIER_THRESHOLDS.p20) && !allAboveThresholds(d, TIER_THRESHOLDS.p40)},
+  ];
+}
+
+function getTierMarker(d){
+  for(const cat of MARKER_CATEGORIES){ if(cat.test(d)) return cat; }
+  return null;
+}
+function tickerCellHTML(ticker, d){
+  if(!d) return ticker;
+  const cat = getTierMarker(d);
+  const dot = cat ? `<span class="elite-dot" style="background:${cat.color};" title="${cat.label}"></span>` : '';
+  // Render trailing asterisk (quarterly flag) as a raised superscript footnote marker
+  let display = ticker;
+  if(typeof ticker === 'string' && ticker.endsWith('*')){
+    display = ticker.slice(0, -1) + '<sup style="font-size:0.7em;line-height:0;position:relative;top:-0.35em;margin-left:1px;opacity:0.85;">*</sup>';
+  }
+  return dot + display;
+}
+
+let activeColorFilters = new Set();
+let activeCompScoreFilters = new Set();
+
+// Composite Score fixed absolute bands (not percentile-relative — these thresholds
+// are constant regardless of how the underlying dataset's scores are distributed)
+const COMP_SCORE_FILTER_CATEGORIES = [
+  {key:'cs_ge90', color:'#e85d5d', label:'Composite Score ≥ 0.90 — click to toggle'},
+  {key:'cs_80_90', color:'#1e88e5', label:'Composite Score ≥ 0.80 and < 0.90 — click to toggle'},
+];
+
+function renderColorFilters(){
+  const box = document.getElementById('colorFilters');
+  box.innerHTML = '';
+  MARKER_CATEGORIES.forEach(cat=>{
+    const btn = document.createElement('button');
+    btn.className = 'color-filter-btn' + (activeColorFilters.has(cat.key) ? ' active' : '');
+    btn.style.background = cat.color;
+    btn.title = cat.label + ' — click to toggle filtering to these tickers (combines with other active colors)';
+    btn.addEventListener('click', ()=>{
+      if(activeColorFilters.has(cat.key)) activeColorFilters.delete(cat.key);
+      else activeColorFilters.add(cat.key);
+      renderColorFilters();
+      applyAll();
+    });
+    box.appendChild(btn);
+  });
+  // Visual separator between growth-tier dots and Composite Score band filters
+  if(MARKER_CATEGORIES.length && COMP_SCORE_FILTER_CATEGORIES.length){
+    const sep = document.createElement('span');
+    sep.style.cssText = 'width:1px;height:14px;background:var(--line);margin:0 2px;flex:none;';
+    box.appendChild(sep);
+  }
+  COMP_SCORE_FILTER_CATEGORIES.forEach(cat=>{
+    const btn = document.createElement('button');
+    btn.className = 'color-filter-btn' + (activeCompScoreFilters.has(cat.key) ? ' active' : '');
+    btn.style.background = cat.color;
+    btn.title = cat.label;
+    btn.addEventListener('click', ()=>{
+      if(activeCompScoreFilters.has(cat.key)) activeCompScoreFilters.delete(cat.key);
+      else activeCompScoreFilters.add(cat.key);
+      renderColorFilters();
+      applyAll();
+    });
+    box.appendChild(btn);
+  });
+}
+renderColorFilters();
+
+// ---- Conditional formatting: green-highlight cells that clear a per-column bar,
+// using the same "higher/lower is better" convention as the Quality Screen preset.
+// Growth/margin/rating metrics light up above their live median; valuation multiples
+// (where cheaper is better) light up below their live mean. Never colored red/negative
+// — this is a "stands out as good" highlight only, same green (--green) throughout.
+const COLOR_RULES = {
+  FwdR:   {dir:'higher', stat:'median'},
+  CompScore: {dir:'higher', stat:'median'},
+  ROIC:   {dir:'higher', stat:'median'},
+  FCF:    {dir:'higher', stat:'median'},
+  EBIT:   {dir:'higher', stat:'median'},
+  EVS:    {dir:'lower',  stat:'mean'},
+  EVEBIT: {dir:'lower',  stat:'mean'},
+  PE:     {dir:'lower',  stat:'mean'},
+  RevY1:  {dir:'higher', stat:'median'},
+  RevY2:  {dir:'higher', stat:'median'},
+  RevY3:  {dir:'higher', stat:'median'},
+  EpsY1:  {dir:'higher', stat:'median'},
+  EpsY2:  {dir:'higher', stat:'median'},
+  EpsY3:  {dir:'higher', stat:'median'},
+  Rev3M:  {dir:'higher', stat:'median'},
+  Rev3M2: {dir:'higher', stat:'median'},
+  Eps3M:  {dir:'higher', stat:'median'},
+  Eps3M2: {dir:'higher', stat:'median'},
+};
+let colorThresholds = {};
+function computeColorThresholds(){
+  Object.keys(COLOR_RULES).forEach(k=>{
+    const rule = COLOR_RULES[k];
+    const vals = data.filter(d=>d[k]!=null && !isAsteriskTicker(d)).map(d=>d[k]);
+    colorThresholds[k] = vals.length ? (rule.stat==='median' ? median(vals) : mean(vals)) : null;
+  });
+}
+computeColorThresholds();
+
+// ---- Raw / Percentile view toggle ----
+// Direction used only to decide the green highlight in Percentile mode: for
+// "lower is better" metrics (valuation multiples), a LOW percentile rank is good.
+const DIR_FOR_PERCENTILE = Object.assign(
+  {}, ...Object.keys(COLOR_RULES).map(k=>({[k]: COLOR_RULES[k].dir})),
+  {R40FCF:'higher', R40EBIT:'higher'}
+);
+let viewMode = 'raw'; // 'raw' | 'percentile'
+let sortedValsCache = {};
+function getSortedVals(key){
+  if(!sortedValsCache[key]){
+    sortedValsCache[key] = data.filter(d=>d[key]!=null && !isAsteriskTicker(d)).map(d=>d[key]).sort((a,b)=>a-b);
+  }
+  return sortedValsCache[key];
+}
+// "Mean" definition of percentile rank (0-100): counts-below plus half of ties, over n.
+function percentRank(sortedArr, v){
+  const n = sortedArr.length;
+  if(!n) return null;
+  let lo = 0, hi = n;
+  while(lo < hi){ const mid=(lo+hi)>>1; if(sortedArr[mid] < v) lo=mid+1; else hi=mid; }
+  const left = lo;
+  lo = 0; hi = n;
+  while(lo < hi){ const mid=(lo+hi)>>1; if(sortedArr[mid] <= v) lo=mid+1; else hi=mid; }
+  const right = lo;
+  return 100 * (left + (right-left)/2) / n;
+}
+function fmtCell(d, c){
+  if(c.key==='Ticker') return d.Ticker;
+  const v = d[c.key];
+  const isMissing = (v===null || v===undefined || Number.isNaN(v));
+  if(viewMode==='raw'){
+    // WoWGrade null is rendered as "New" inside fmt()
+    if(isMissing && c.key !== 'WoWGrade') return '<span class="na">–</span>';
+    return fmt(v, c.fmt, c.key, d);
+  }
+  // Percentile view: missing data is the explicit floor (P0) — a visible penalty
+  // signal, not a neutral blank. Real data floors at P1, so P0 is reserved solely
+  // for "no data", consistent with how the Composite Score treats missing inputs.
+  // Exception: the Composite Score column itself never has "missing" entries at
+  // this layer (every ticker always has a real score), and its own P1 floor is
+  // already applied when the score is generated — so no second floor here.
+  if(isMissing) return '<span class="na" title="No data — treated as the worst percentile">P0</span>';
+  const rawRank = percentRank(getSortedVals(c.key), v);
+  if(rawRank==null) return '<span class="na" title="No data — treated as the worst percentile">P0</span>';
+  const rank = c.key==='CompScore' ? rawRank : Math.max(rawRank, 1); // real data floored at P1 except CompScore, which is floored upstream instead
+  return `P${Math.round(rank)}`;
+}
+let sortKey = 'ROIC', sortDir = -1;
+let page = 0;
+const PAGE_SIZE = 40;
+
+const REVISION_FIELDS = ['Rev3M','Rev3M2','Eps3M','Eps3M2'];
+function fmt(v, type, key, row){
+  // WoW Grade: conditional formatting matching column colours
+  if(key === 'WoWGrade'){
+    if(v === null || v === undefined || Number.isNaN(v)){
+      return '<span style="color:var(--blue);font-weight:500;">New</span>';
+    }
+    let cls = '';
+    if(v >= 0.05) cls = 'pos';
+    else if(v <= -0.05) cls = 'neg';
+    return `<span class="${cls}">${v>=0?'+':''}${v.toFixed(3)}</span>`;
+  }
+  // Composite Score for quarterly (asterisk) tickers is explicitly NA
+  if(key === 'CompScore' && (v === null || v === undefined || Number.isNaN(v))){
+    return '<span class="na">NA</span>';
+  }
+  if(v === null || v === undefined || Number.isNaN(v)) return '<span class="na">–</span>';
+  let cls = '';
+  if(key && REVISION_FIELDS.includes(key) && v < 0){
+    cls = 'neg';
+  } else if(type==='r40'){
+    cls = v>40 ? 'pos' : '';
+  } else if(key && COLOR_RULES[key] && colorThresholds[key]!=null){
+    const rule = COLOR_RULES[key];
+    const good = rule.dir==='higher' ? v > colorThresholds[key] : v < colorThresholds[key];
+    cls = good ? 'pos' : '';
+  } else if(type==='pct'){
+    cls = v>=0?'pos':'neg';
+  } else if(type==='delta'){
+    cls = v>=0?'pos':'neg';
+  }
+  switch(type){
+    case 'x': return `<span class="${cls}">${v.toFixed(1)}x</span>`;
+    case 'pct': return `<span class="${cls}">${v>=0?'+':''}${v.toFixed(1)}%</span>`;
+    case 'r40': return `<span class="${cls}">${v>=0?'+':''}${v.toFixed(1)}%</span>`;
+    case 'score': return `<span class="${cls}">${v.toFixed(2)}</span>`;
+    case 'delta': return `<span class="${cls}">${v>=0?'+':''}${v.toFixed(3)}</span>`;
+    case 'compscore': {
+      let color = '';
+      if(v >= 0.9) color = '#00E5FF';
+      else if(v >= 0.8) color = '#BA68C8';
+      else if(v >= 0.7) color = '#FBC02D';
+      // Display rounded to the nearest 0.05 (~10 percentile points) — the gap below
+      // which score differences are noise rather than a meaningful ranking signal.
+      // Sorting/filtering still use the full continuous value above.
+      const displayVal = (Math.round(v / 0.05) * 0.05).toFixed(2);
+      // Visual-only asterisk for scores computed under the 6-horizon growth weights
+      const star = (row && isAsteriskTicker(row))
+        ? '<sup style="font-size:0.7em;line-height:0;position:relative;top:-0.35em;margin-left:1px;opacity:0.85;">*</sup>'
+        : '';
+      return color
+        ? `<span style="color:${color};font-weight:600;">${displayVal}${star}</span>`
+        : displayVal + star;
+    }
+    default: return v;
+  }
+}
+
+function makeSortHandler(key, onSort){
+  return ()=>{
+    if(onSort){ onSort(key); }
+    else {
+      if(sortKey===key) sortDir *= -1; else {sortKey=key; sortDir=-1;}
+      applyAll();
+    }
+  };
+}
+
+function buildHeaderInto(thead, sortable, opts){
+  opts = opts || {};
+  const activeKey = opts.sortKey !== undefined ? opts.sortKey : sortKey;
+  const onSort = opts.onSort || null;
+  const showFilters = !!opts.showFilters;
+  // Capture current filter values before wiping the thead
+  if(showFilters){
+    document.querySelectorAll('input.col-filter').forEach(el=>{
+      const fid = el.dataset.filterId;
+      if(fid) filterValues[fid] = el.value;
+    });
+  }
+  thead.innerHTML = '';
+  thead.classList.toggle('has-filters', showFilters);
+
+  const trTop = document.createElement('tr');
+  trTop.className = 'hdr-row-groups';
+  const trSub = document.createElement('tr');
+  trSub.className = 'hdr-row-labels';
+  const trFilter = showFilters ? document.createElement('tr') : null;
+  if(trFilter) trFilter.className = 'hdr-row-filters';
+
+  const totalRows = showFilters ? 3 : 2;
+
+  let i = 0;
+  while(i < COLS.length){
+    const c = COLS[i];
+    if(!c.group){
+      const th = document.createElement('th');
+      // Label spans group+label rows; filter (if any) sits in the third row
+      th.rowSpan = showFilters && c.filterId ? (totalRows - 1) : totalRows;
+      if(c.label.indexOf('<br') >= 0) th.innerHTML = c.label; else th.textContent = c.label;
+      th.dataset.key = c.key;
+      if(c.key==='CompScore') th.classList.add('col-compscore');
+      if(sortable && c.key===activeKey) th.classList.add('sorted');
+      if(c.key==='Ticker') th.classList.add('sticky-col');
+      if(sortable) th.onclick = makeSortHandler(c.key, onSort);
+      trTop.appendChild(th);
+
+      if(showFilters && c.filterId){
+        const fth = document.createElement('th');
+        fth.className = 'filter-cell' + (c.key==='Ticker' ? ' sticky-col' : '');
+        fth.dataset.key = c.key;
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.id = (opts.idPrefix || '') + c.filterId;
+        inp.dataset.filterId = c.filterId;
+        inp.className = 'col-filter';
+        inp.placeholder = 'filter';
+        inp.value = filterValues[c.filterId] || '';
+        inp.title = c.key==='WoWGrade'
+          ? 'Filter WoW grade (e.g. >=0.05, <=-0.05, New)'
+          : c.key==='Ticker'
+          ? 'Filter ticker (substring). Type * to show asterisk tickers only'
+          : 'Filter ' + c.label + ' (e.g. 2;5, >median, >P10)';
+        inp.addEventListener('click', e=>e.stopPropagation());
+        inp.addEventListener('mousedown', e=>e.stopPropagation());
+        inp.addEventListener('input', ()=>{
+          filterValues[c.filterId] = inp.value;
+          // Sync sibling input on the other tab (same logical filter)
+          document.querySelectorAll('input.col-filter[data-filter-id="'+c.filterId+'"]').forEach(other=>{
+            if(other !== inp) other.value = inp.value;
+          });
+          applyAll(false);
+          if(document.getElementById('portfolioView').style.display !== 'none') renderPortfolio();
+        });
+        // WoW Grade: interactive suggestion dropdown (green / red / blue options)
+        if(c.key==='WoWGrade'){
+          const wrap = document.createElement('div');
+          wrap.className = 'wow-suggest-wrap';
+          const menu = document.createElement('div');
+          menu.className = 'wow-suggest-menu';
+          const suggestions = [
+            {value:'>=0.05', label:'≥ +0.05', hint:'green', color:'#3dd68c'},
+            {value:'<=-0.05', label:'≤ −0.05', hint:'red', color:'#ef5f5f'},
+            {value:'New', label:'New', hint:'blue', color:'#1e88e5'},
+          ];
+          suggestions.forEach(s=>{
+            const item = document.createElement('div');
+            item.className = 'wow-suggest-item';
+            item.innerHTML = '<span class="swatch" style="background:'+s.color+'"></span><span>'+s.label+'</span><span class="hint">'+s.hint+'</span>';
+            item.addEventListener('mousedown', e=>{
+              e.preventDefault();
+              e.stopPropagation();
+              inp.value = s.value;
+              filterValues[c.filterId] = s.value;
+              document.querySelectorAll('input.col-filter[data-filter-id="'+c.filterId+'"]').forEach(other=>{
+                if(other !== inp) other.value = s.value;
+              });
+              menu.classList.remove('open');
+              applyAll(false);
+              if(document.getElementById('portfolioView').style.display !== 'none') renderPortfolio();
+            });
+            menu.appendChild(item);
+          });
+          inp.addEventListener('focus', ()=>{ menu.classList.add('open'); });
+          inp.addEventListener('blur', ()=>{ setTimeout(()=>menu.classList.remove('open'), 150); });
+          wrap.appendChild(inp);
+          wrap.appendChild(menu);
+          fth.appendChild(wrap);
+        } else {
+          fth.appendChild(inp);
+        }
+        trFilter.appendChild(fth);
+      }
+      i++;
+    } else {
+      let j = i;
+      while(j < COLS.length && COLS[j].group === c.group) j++;
+      const gth = document.createElement('th');
+      gth.colSpan = j - i;
+      gth.textContent = c.group;
+      gth.className = 'group-hdr' + (c.color ? ' group-'+c.color : '');
+      trTop.appendChild(gth);
+      for(let k=i;k<j;k++){
+        const cc = COLS[k];
+        const sth = document.createElement('th');
+        sth.textContent = cc.label;
+        sth.dataset.key = cc.key;
+        if(sortable && cc.key===activeKey) sth.classList.add('sorted');
+        if(cc.color) sth.classList.add('sub-'+cc.color);
+        if(sortable) sth.onclick = makeSortHandler(cc.key, onSort);
+        trSub.appendChild(sth);
+
+        if(showFilters){
+          const fth = document.createElement('th');
+          fth.className = 'filter-cell';
+          fth.dataset.key = cc.key;
+          if(cc.filterId){
+            const inp = document.createElement('input');
+            inp.type = 'text';
+            inp.id = (opts.idPrefix || '') + cc.filterId;
+            inp.dataset.filterId = cc.filterId;
+            inp.className = 'col-filter';
+            inp.placeholder = 'filter';
+            inp.value = filterValues[cc.filterId] || '';
+            const isRevCol = ['Rev3M','Rev3M2','Eps3M','Eps3M2'].includes(cc.key);
+            inp.title = isRevCol
+              ? 'Filter revisions (e.g. >=0 green, <0 red)'
+              : 'Filter ' + cc.label + ' (e.g. 2;5, >median, >P10)';
+            inp.addEventListener('click', e=>e.stopPropagation());
+            inp.addEventListener('mousedown', e=>e.stopPropagation());
+            inp.addEventListener('input', ()=>{
+              filterValues[cc.filterId] = inp.value;
+              document.querySelectorAll('input.col-filter[data-filter-id="'+cc.filterId+'"]').forEach(other=>{
+                if(other !== inp) other.value = inp.value;
+              });
+              applyAll(false);
+              if(document.getElementById('portfolioView').style.display !== 'none') renderPortfolio();
+            });
+            // Revenue Rev / EPS Rev: green / red suggestion dropdown only
+            if(isRevCol){
+              const wrap = document.createElement('div');
+              wrap.className = 'wow-suggest-wrap';
+              const menu = document.createElement('div');
+              menu.className = 'wow-suggest-menu';
+              const suggestions = [
+                {value:'>=0', label:'≥ 0', hint:'green', color:'#3dd68c'},
+                {value:'<0', label:'< 0', hint:'red', color:'#ef5f5f'},
+              ];
+              suggestions.forEach(s=>{
+                const item = document.createElement('div');
+                item.className = 'wow-suggest-item';
+                item.innerHTML = '<span class="swatch" style="background:'+s.color+'"></span><span>'+s.label+'</span><span class="hint">'+s.hint+'</span>';
+                item.addEventListener('mousedown', e=>{
+                  e.preventDefault();
+                  e.stopPropagation();
+                  inp.value = s.value;
+                  filterValues[cc.filterId] = s.value;
+                  document.querySelectorAll('input.col-filter[data-filter-id="'+cc.filterId+'"]').forEach(other=>{
+                    if(other !== inp) other.value = s.value;
+                  });
+                  menu.classList.remove('open');
+                  applyAll(false);
+                  if(document.getElementById('portfolioView').style.display !== 'none') renderPortfolio();
+                });
+                menu.appendChild(item);
+              });
+              inp.addEventListener('focus', ()=>{ menu.classList.add('open'); });
+              inp.addEventListener('blur', ()=>{ setTimeout(()=>menu.classList.remove('open'), 150); });
+              wrap.appendChild(inp);
+              wrap.appendChild(menu);
+              fth.appendChild(wrap);
+            } else {
+              fth.appendChild(inp);
+            }
+          }
+          trFilter.appendChild(fth);
+        }
+      }
+      i = j;
+    }
+  }
+  thead.appendChild(trTop);
+  thead.appendChild(trSub);
+  if(trFilter) thead.appendChild(trFilter);
+
+  // Sticky offsets: row2 under row1; row3 under row1+row2
+  requestAnimationFrame(()=>{
+    const h1 = trTop.getBoundingClientRect().height;
+    const h2 = trSub.getBoundingClientRect().height;
+    if(h1) document.documentElement.style.setProperty('--thead-row1-h', h1+'px');
+    if(h2) document.documentElement.style.setProperty('--thead-row2-h', (h1+h2)+'px');
+  });
+}
+
+function buildHeader(){
+  const active = document.activeElement;
+  const activeFid = (active && active.classList && active.classList.contains('col-filter')) ? active.dataset.filterId : null;
+  const activeDomId = activeFid ? active.id : null;
+  const selStart = activeFid != null ? active.selectionStart : null;
+  const selEnd = activeFid != null ? active.selectionEnd : null;
+  buildHeaderInto(document.getElementById('thead'), true, { showFilters: true });
+  if(activeDomId){
+    const el = document.getElementById(activeDomId);
+    if(el){
+      el.focus();
+      try{ if(selStart != null) el.setSelectionRange(selStart, selEnd); }catch(e){}
+    }
+  }
+}
+
+// Parses a filter box value. Supports:
+//   "2;5"   -> inclusive range [2,5]
+//   ">5" / ">=5" / "<5" / "<=5" -> open-ended bound
+//   "5"     -> treated as >=5 (backwards compatible default)
+//   "median" / ">median" / "<median" / ">=median" / "<=median" -> bound at that
+//     field's live median across the full dataset (default op is ">" when omitted)
+//   "mean" works the same way, using the field's mean instead of its median
+function parseRangeFilter(raw, fieldKey){
+  const s = (raw||'').trim();
+  if(!s) return null;
+
+  const kwMatch = s.match(/^(>=|<=|>|<)?\s*(median|mean)\s*$/i);
+  if(kwMatch && fieldKey){
+    const op = kwMatch[1] || '>';
+    const kind = kwMatch[2].toLowerCase();
+    const vals = data.filter(d=>d[fieldKey]!=null && !isAsteriskTicker(d)).map(d=>d[fieldKey]);
+    if(!vals.length) return null;
+    const v = kind==='median' ? median(vals) : mean(vals);
+    switch(op){
+      case '>':  return {lo: v + Number.EPSILON, hi: Infinity};
+      case '>=': return {lo: v, hi: Infinity};
+      case '<':  return {lo: -Infinity, hi: v - Number.EPSILON};
+      case '<=': return {lo: -Infinity, hi: v};
+    }
+  }
+
+  // Percentile keyword, e.g. "P10", ">P90", "<=p50" (any 0-100 percentile of the
+  // current field's distribution across the full screener universe)
+  const pctMatch = s.match(/^(>=|<=|>|<)?\s*P(\d{1,3}(?:\.\d+)?)\s*$/i);
+  if(pctMatch && fieldKey){
+    const op = pctMatch[1] || '>';
+    const p = parseFloat(pctMatch[2]);
+    if(p < 0 || p > 100) return null;
+    const sorted = data.filter(d=>d[fieldKey]!=null && !isAsteriskTicker(d)).map(d=>d[fieldKey]).sort((a,b)=>a-b);
+    if(!sorted.length) return null;
+    const v = percentileSorted(sorted, p/100);
+    if(v==null) return null;
+    switch(op){
+      case '>':  return {lo: v + Number.EPSILON, hi: Infinity};
+      case '>=': return {lo: v, hi: Infinity};
+      case '<':  return {lo: -Infinity, hi: v - Number.EPSILON};
+      case '<=': return {lo: -Infinity, hi: v};
+    }
+  }
+
+  if(s.includes(';')){
+    const [loStr, hiStr] = s.split(';');
+    const lo = parseFloat(loStr), hi = parseFloat(hiStr);
+    if(isNaN(lo) && isNaN(hi)) return null;
+    return {lo: isNaN(lo)?-Infinity:lo, hi: isNaN(hi)?Infinity:hi};
+  }
+
+  const opMatch = s.match(/^(>=|<=|>|<)\s*(-?\d+\.?\d*)$/);
+  if(opMatch){
+    const [, op, numStr] = opMatch;
+    const v = parseFloat(numStr);
+    if(isNaN(v)) return null;
+    switch(op){
+      case '>':  return {lo: v + Number.EPSILON, hi: Infinity};
+      case '>=': return {lo: v, hi: Infinity};
+      case '<':  return {lo: -Infinity, hi: v - Number.EPSILON};
+      case '<=': return {lo: -Infinity, hi: v};
+    }
+  }
+
+  const v = parseFloat(s);
+  if(isNaN(v)) return null;
+  return {lo: v, hi: Infinity};
+}
+
+let presetActive = false;
+
+// Standard metrics must be >= their median. Valuation is a single conditional
+// multiple per ticker (not both EV/S and EV/EBIT): EV/EBIT when the company is
+// solidly profitable (EBIT margin > 3%), else EV/S when margins are thin/negative
+// and EBIT-based multiples aren't meaningful. That chosen multiple must be <= its mean.
+const PRESET_MEDIAN_FIELDS = ['ROIC','FCF','RevY1','RevY2','EpsY1','EpsY2','Rev3M','Rev3M2','Eps3M','Eps3M2'];
+const PRESET_VALUATION_FIELDS = ['EVS','EVEBIT'];
+
+function presetValuationKey(d){
+  return (d.EBIT!=null && d.EBIT > 3) ? 'EVEBIT' : 'EVS';
+}
+
+function computePresetThresholds(){
+  const th = {};
+  PRESET_MEDIAN_FIELDS.forEach(k=>{
+    th[k] = {type:'median', value: median(data.filter(d=>d[k]!=null && !isAsteriskTicker(d)).map(d=>d[k]))};
+  });
+  PRESET_VALUATION_FIELDS.forEach(k=>{
+    th[k] = {type:'mean', value: mean(data.filter(d=>d[k]!=null && !isAsteriskTicker(d)).map(d=>d[k]))};
+  });
+  return th;
+}
+let presetThresholds = null;
+
+function passesPreset(d, th){
+  for(const k of PRESET_MEDIAN_FIELDS){
+    if(d[k]==null || d[k] < th[k].value) return false;
+  }
+  const valKey = presetValuationKey(d);
+  if(d[valKey]==null || d[valKey] > th[valKey].value) return false;
+  return true;
+}
+
+let ratingActive = false;
+let ratingThresholds = null;
+function computeRatingThresholds(){
+  return {
+    FwdR: median(data.filter(d=>d.FwdR!=null && !isAsteriskTicker(d)).map(d=>d.FwdR))
+  };
+}
+function passesRating(d, th){
+  return d.FwdR!=null && d.FwdR > th.FwdR;
+}
+
+function applyFilters(){
+  const qRaw = document.getElementById('search').value.trim().toUpperCase();
+  const rangeCompScore = parseRangeFilter(getFilterValue('fCompScore'), 'CompScore');
+  const wowRaw = (getFilterValue('fWoWGrade') || '').trim();
+  const wowIsNew = /^new$/i.test(wowRaw);
+  const rangeWoWGrade = wowIsNew ? null : parseRangeFilter(wowRaw, 'WoWGrade');
+  const rangePE = parseRangeFilter(getFilterValue('fPE'), 'PE');
+  const rangeROIC = parseRangeFilter(getFilterValue('fROIC'), 'ROIC');
+  const rangeFCF = parseRangeFilter(getFilterValue('fFCF'), 'FCF');
+  const rangeRevY1 = parseRangeFilter(getFilterValue('fRevY1'), 'RevY1');
+  const rangeRevY2 = parseRangeFilter(getFilterValue('fRevY2'), 'RevY2');
+  const rangeRevY3 = parseRangeFilter(getFilterValue('fRevY3'), 'RevY3');
+  const rangeEpsY1 = parseRangeFilter(getFilterValue('fEpsY1'), 'EpsY1');
+  const rangeEpsY2 = parseRangeFilter(getFilterValue('fEpsY2'), 'EpsY2');
+  const rangeEpsY3 = parseRangeFilter(getFilterValue('fEpsY3'), 'EpsY3');
+  const rangeRev3M = parseRangeFilter(getFilterValue('fRev3M'), 'Rev3M');
+  const rangeRev3M2 = parseRangeFilter(getFilterValue('fRev3M2'), 'Rev3M2');
+  const rangeEps3M = parseRangeFilter(getFilterValue('fEps3M'), 'Eps3M');
+  const rangeEps3M2 = parseRangeFilter(getFilterValue('fEps3M2'), 'Eps3M2');
+  const rangeR40FCF = parseRangeFilter(getFilterValue('fR40FCF'), 'R40FCF');
+  const rangeR40EBIT = parseRangeFilter(getFilterValue('fR40EBIT'), 'R40EBIT');
+
+  // Multi-ticker search: split on commas, semicolons, or whitespace.
+  // e.g. "AAPL, MSFT, NVDA" or "AAPL MSFT NVDA" or "ZYME, HCC"
+  // Terms are matched on the base symbol — no need to type a trailing asterisk.
+  const terms = qRaw.split(/[,;\s]+/).map(t=>t.trim()).filter(Boolean)
+    .map(t=>t.replace(/^\*+|\*+$/g, '')); // strip * from query terms
+  const isMultiSearch = terms.length > 1;
+
+  if(presetActive && !presetThresholds) presetThresholds = computePresetThresholds();
+  if(ratingActive && !ratingThresholds) ratingThresholds = computeRatingThresholds();
+
+  filtered = data.filter(d=>{
+    const ticker = (d.Ticker||'').toUpperCase();
+    const baseSym = ticker.replace(/^\*+|\*+$/g, ''); // base without asterisk
+
+    // Column filter under Ticker header
+    const tickerColQ = (getFilterValue('fTicker') || '').trim();
+    if(tickerColQ){
+      if(/^\*+$/.test(tickerColQ)){
+        // Type * alone → asterisk tickers only
+        if(!(ticker.startsWith('*') || ticker.endsWith('*'))) return false;
+      } else {
+        const q = tickerColQ.toUpperCase().replace(/^\*+|\*+$/g, '');
+        if(q && !ticker.includes(q) && !baseSym.includes(q)) return false;
+      }
+    }
+
+    if(terms.length){
+      if(isMultiSearch){
+        // Exact match on base symbol for any listed ticker (asterisk optional in input)
+        const match = terms.some(t => t === baseSym || t === ticker);
+        if(!match) return false;
+      } else {
+        // Single term: substring match on full or base symbol
+        const t0 = terms[0];
+        if(!ticker.includes(t0) && !baseSym.includes(t0)) return false;
+      }
+    }
+    if(rangeCompScore && !(d.CompScore!=null && d.CompScore >= rangeCompScore.lo && d.CompScore <= rangeCompScore.hi)) return false;
+    if(wowIsNew && d.WoWGrade!=null) return false;
+    if(rangeWoWGrade && !(d.WoWGrade!=null && d.WoWGrade >= rangeWoWGrade.lo && d.WoWGrade <= rangeWoWGrade.hi)) return false;
+    if(rangePE && !(d.PE!=null && d.PE >= rangePE.lo && d.PE <= rangePE.hi)) return false;
+    if(rangeROIC && !(d.ROIC!=null && d.ROIC >= rangeROIC.lo && d.ROIC <= rangeROIC.hi)) return false;
+    if(rangeFCF && !(d.FCF!=null && d.FCF >= rangeFCF.lo && d.FCF <= rangeFCF.hi)) return false;
+    if(rangeRevY1 && !(d.RevY1!=null && d.RevY1 >= rangeRevY1.lo && d.RevY1 <= rangeRevY1.hi)) return false;
+    if(rangeRevY2 && !(d.RevY2!=null && d.RevY2 >= rangeRevY2.lo && d.RevY2 <= rangeRevY2.hi)) return false;
+    if(rangeRevY3 && !(d.RevY3!=null && d.RevY3 >= rangeRevY3.lo && d.RevY3 <= rangeRevY3.hi)) return false;
+    if(rangeEpsY1 && !(d.EpsY1!=null && d.EpsY1 >= rangeEpsY1.lo && d.EpsY1 <= rangeEpsY1.hi)) return false;
+    if(rangeEpsY2 && !(d.EpsY2!=null && d.EpsY2 >= rangeEpsY2.lo && d.EpsY2 <= rangeEpsY2.hi)) return false;
+    if(rangeEpsY3 && !(d.EpsY3!=null && d.EpsY3 >= rangeEpsY3.lo && d.EpsY3 <= rangeEpsY3.hi)) return false;
+    if(rangeRev3M && !(d.Rev3M!=null && d.Rev3M >= rangeRev3M.lo && d.Rev3M <= rangeRev3M.hi)) return false;
+    if(rangeRev3M2 && !(d.Rev3M2!=null && d.Rev3M2 >= rangeRev3M2.lo && d.Rev3M2 <= rangeRev3M2.hi)) return false;
+    if(rangeEps3M && !(d.Eps3M!=null && d.Eps3M >= rangeEps3M.lo && d.Eps3M <= rangeEps3M.hi)) return false;
+    if(rangeEps3M2 && !(d.Eps3M2!=null && d.Eps3M2 >= rangeEps3M2.lo && d.Eps3M2 <= rangeEps3M2.hi)) return false;
+    if(rangeR40FCF && !(d.R40FCF!=null && d.R40FCF >= rangeR40FCF.lo && d.R40FCF <= rangeR40FCF.hi)) return false;
+    if(rangeR40EBIT && !(d.R40EBIT!=null && d.R40EBIT >= rangeR40EBIT.lo && d.R40EBIT <= rangeR40EBIT.hi)) return false;
+    // Explicit multi-ticker search wins: show the listed symbols even if quality/rating screens are on
+    if(!isMultiSearch){
+      if(presetActive && !passesPreset(d, presetThresholds)) return false;
+      if(ratingActive && !passesRating(d, ratingThresholds)) return false;
+    }
+    // All 6 circle filters (4 marker tiers + 2 composite-score bands) act as one
+    // unified OR group: a ticker shows if it matches ANY currently active circle,
+    // not "one from each group" — turning on another circle only ever adds tickers.
+    // Colour-circle filters still apply, except when the user has typed an explicit
+    // multi-ticker list in search — then those symbols should always stay visible.
+    if(!isMultiSearch && (activeColorFilters.size || activeCompScoreFilters.size)){
+      const passesMarker = activeColorFilters.size>0 && MARKER_CATEGORIES.some(cat=>activeColorFilters.has(cat.key) && cat.test(d));
+      const passesComp = activeCompScoreFilters.size>0 && d.CompScore!=null && (
+        (activeCompScoreFilters.has('cs_ge90') && d.CompScore >= 0.90) ||
+        (activeCompScoreFilters.has('cs_80_90') && d.CompScore >= 0.80 && d.CompScore < 0.90)
+      );
+      if(!passesMarker && !passesComp) return false;
+    }
+    return true;
+  });
+}
+
+function applySort(){
+  filtered.sort((a,b)=>{
+    let av = a[sortKey], bv = b[sortKey];
+    if(av===null||av===undefined) return 1;
+    if(bv===null||bv===undefined) return -1;
+    if(typeof av==='string') return sortDir * av.localeCompare(bv);
+    return sortDir * (av-bv);
+  });
+}
+
+function renderTable(){
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  const start = page*PAGE_SIZE;
+  const rows = filtered.slice(start, start+PAGE_SIZE);
+  rows.forEach(d=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = COLS.map(c=>{
+      if(c.key==='Ticker') return `<td class="sticky-col">${tickerCellHTML(d.Ticker, d)}</td>`;
+      return `<td>${fmtCell(d, c)}</td>`;
+    }).join('');
+    tbody.appendChild(tr);
+  });
+  const countValEl = document.getElementById('countVal');
+  if(countValEl) countValEl.textContent = filtered.length.toLocaleString() + ' / ' + data.length.toLocaleString();
+  const totalPages = Math.max(1, Math.ceil(filtered.length/PAGE_SIZE));
+  document.getElementById('pageInfo').textContent = `Page ${page+1} of ${totalPages} — showing ${rows.length} of ${filtered.length.toLocaleString()}`;
+  document.getElementById('prevBtn').disabled = page===0;
+  document.getElementById('nextBtn').disabled = page>=totalPages-1;
+  buildHeader();
+}
+
+function applyAll(resetPage=true){
+  applyFilters();
+  applySort();
+  if(resetPage) page=0;
+  renderTable();
+}
+
+document.getElementById('search').addEventListener('input', ()=>{ applyAll(); updateHighlights(); });
+document.getElementById('presetBtn').addEventListener('click', ()=>{
+  presetActive = !presetActive;
+  document.getElementById('presetBtn').classList.toggle('active', presetActive);
+  applyAll();
+});
+document.getElementById('ratingBtn').addEventListener('click', ()=>{
+  ratingActive = !ratingActive;
+  document.getElementById('ratingBtn').classList.toggle('active', ratingActive);
+  applyAll();
+});
+document.getElementById('viewRawBtn').addEventListener('click', ()=>{
+  viewMode = 'raw';
+  document.getElementById('viewRawBtn').classList.add('active');
+  document.getElementById('viewPctBtn').classList.remove('active');
+  renderTable();
+});
+document.getElementById('viewPctBtn').addEventListener('click', ()=>{
+  viewMode = 'percentile';
+  document.getElementById('viewPctBtn').classList.add('active');
+  document.getElementById('viewRawBtn').classList.remove('active');
+  renderTable();
+});
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  Object.keys(filterValues).forEach(k=>{ filterValues[k] = ''; });
+  document.querySelectorAll('input.col-filter').forEach(el=>{ el.value = ''; });
+  document.getElementById('search').value = '';
+  presetActive = false;
+  ratingActive = false;
+  document.getElementById('presetBtn').classList.remove('active');
+  document.getElementById('ratingBtn').classList.remove('active');
+  activeColorFilters.clear();
+  activeCompScoreFilters.clear();
+  renderColorFilters();
+  applyAll();
+  updateHighlights();
+  if(document.getElementById('portfolioView').style.display !== 'none') renderPortfolio();
+});
+document.getElementById('prevBtn').addEventListener('click', ()=>{ if(page>0){page--; renderTable();} });
+document.getElementById('nextBtn').addEventListener('click', ()=>{
+  const totalPages = Math.ceil(filtered.length/PAGE_SIZE);
+  if(page<totalPages-1){page++; renderTable();}
+});
+
+// ---- Export Tickers: comma-separated list of whatever currently matches the
+// active filters/search/screens (the `filtered` array), not the full universe.
+function openExportModal(){
+  // Strip asterisk markers so exported symbols are plain tickers usable elsewhere
+  const tickers = filtered.map(d=>String(d.Ticker||'').replace(/\*/g, ''));
+  document.getElementById('exportTextarea').value = tickers.join(', ');
+  document.getElementById('exportCount').textContent = tickers.length.toLocaleString() + ' ticker(s) matching current filters';
+  document.getElementById('exportModalOverlay').style.display = 'flex';
+}
+function closeExportModal(){
+  document.getElementById('exportModalOverlay').style.display = 'none';
+}
+document.getElementById('exportBtn').addEventListener('click', openExportModal);
+document.getElementById('exportCloseBtn').addEventListener('click', closeExportModal);
+document.getElementById('exportCloseBtn2').addEventListener('click', closeExportModal);
+document.getElementById('exportModalOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'exportModalOverlay') closeExportModal();
+});
+document.getElementById('exportCopyBtn').addEventListener('click', async ()=>{
+  const ta = document.getElementById('exportTextarea');
+  ta.select();
+  let copied = false;
+  try{
+    await navigator.clipboard.writeText(ta.value);
+    copied = true;
+  }catch(e){
+    try{ copied = document.execCommand('copy'); }catch(e2){ copied = false; }
+  }
+  const btn = document.getElementById('exportCopyBtn');
+  const original = btn.textContent;
+  btn.textContent = copied ? 'Copied ✓' : 'Select text above and copy manually';
+  setTimeout(()=>{ btn.textContent = original; }, 2000);
+});
+
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    const tab = t.dataset.tab;
+    document.getElementById('tableView').style.display = tab==='table'?'block':'none';
+    document.getElementById('chartView').style.display = tab==='charts'?'block':'none';
+    document.getElementById('portfolioView').style.display = tab==='portfolio'?'block':'none';
+    document.getElementById('decileView').style.display = tab==='deciles'?'block':'none';
+    if(tab==='charts') renderCharts();
+    if(tab==='portfolio') renderPortfolio();
+    if(tab==='deciles') renderDeciles();
+  });
+});
+
+// ---- Ticker parsing / validation ----
+// Asterisk is a valid portfolio/watchlist marker and may be supplied on either
+// side of the ticker. Matching is performed against the base symbol so OPEN*,
+// *OPEN, and the dataset's OPEN* record all resolve to the same company.
+function normalizeTickerInput(value){
+  return String(value == null ? '' : value).trim().toUpperCase();
+}
+function tickerBase(value){
+  return normalizeTickerInput(value).replace(/^\*+|\*+$/g, '');
+}
+function findTickerData(value){
+  const raw = normalizeTickerInput(value);
+  if(!raw) return null;
+  // Exact match first (includes trailing/leading asterisk if typed).
+  const exact = data.find(d=>normalizeTickerInput(d.Ticker)===raw);
+  if(exact) return exact;
+  // Allow resolving a plain base symbol to its asterisk form in the screener
+  // (e.g. typing "ZYME" finds "ZYME*") so portfolio add does not require the *.
+  const base = tickerBase(raw);
+  if(!base) return null;
+  return data.find(d=>tickerBase(d.Ticker)===base) || null;
+}
+function tickerInputIsValid(value){
+  return !!findTickerData(value);
+}
+
+// ---- Portfolio: user-entered tickers rendered in an exact replica of the screener table ----
+const PORTFOLIO_STORAGE_KEY = 'marketMonitor.portfolioTickers';
+let portfolioTickers = [];
+let portfolioDirty = false;
+let portfolioSortKey = 'Ticker';
+let portfolioSortDir = 1;
+
+function loadPortfolioFromStorage(){
+  try{
+    const raw = localStorage.getItem(PORTFOLIO_STORAGE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(Array.isArray(parsed)){
+        portfolioTickers = [...new Set(parsed.map(normalizeTickerInput).filter(Boolean))]
+          .filter(t=>data.some(d=>normalizeTickerInput(d.Ticker)===t));
+      }
+    }
+  }catch(e){ /* localStorage unavailable (e.g. file opened in a sandboxed/private context) — start empty */ }
+}
+
+function setPortfolioStatus(msg, cls){
+  const el = document.getElementById('portfolioSaveStatus');
+  if(!el) return;
+  el.textContent = msg;
+  el.className = cls || 'na';
+}
+
+function savePortfolioToStorage(){
+  try{
+    localStorage.setItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(portfolioTickers));
+    portfolioDirty = false;
+    const now = new Date();
+    setPortfolioStatus('Saved ✓ ' + now.toLocaleTimeString(), 'pos');
+  }catch(e){
+    setPortfolioStatus('Could not save (browser storage blocked)', 'neg');
+  }
+}
+
+loadPortfolioFromStorage();
+
+function renderPortfolioChips(){
+  const box = document.getElementById('portfolioChips');
+  box.innerHTML = '';
+  portfolioTickers.forEach(t=>{
+    const chip = document.createElement('span');
+    chip.className = 'highlight-chip';
+    chip.style.cursor = 'pointer';
+    chip.title = 'Click to remove';
+    chip.innerHTML = `<span class="dot" style="background:var(--amber);"></span>${t} &times;`;
+    chip.addEventListener('click', ()=>{
+      portfolioTickers = portfolioTickers.filter(x=>x!==t);
+      portfolioDirty = true;
+      setPortfolioStatus('Unsaved changes', 'na');
+      renderPortfolio();
+    });
+    box.appendChild(chip);
+  });
+}
+
+function onPortfolioSort(key){
+  if(portfolioSortKey === key) portfolioSortDir *= -1;
+  else { portfolioSortKey = key; portfolioSortDir = -1; }
+  renderPortfolio();
+}
+
+function passesMetricFilters(d){
+  if(!d) return false;
+
+  // Ticker column filter: substring match on symbol; typing "*" shows asterisk tickers only.
+  // A lone "*" (or filter that is only asterisks) restricts to asterisk rows; any other
+  // text matches the base ticker (asterisk character stripped for comparison).
+  const tickerQ = (getFilterValue('fTicker') || '').trim();
+  if(tickerQ){
+    if(/^\*+$/.test(tickerQ)){
+      if(!isAsteriskTicker(d)) return false;
+    } else {
+      const base = tickerBase(d.Ticker || '');
+      const q = tickerBase(tickerQ).toUpperCase();
+      if(!base.includes(q) && !(d.Ticker || '').toUpperCase().includes(tickerQ.toUpperCase())) return false;
+    }
+  }
+
+  const checks = [
+    ['fCompScore','CompScore'], ['fWoWGrade','WoWGrade'], ['fPE','PE'], ['fROIC','ROIC'], ['fFCF','FCF'],
+    ['fRevY1','RevY1'], ['fRevY2','RevY2'], ['fRevY3','RevY3'], ['fEpsY1','EpsY1'], ['fEpsY2','EpsY2'], ['fEpsY3','EpsY3'],
+    ['fRev3M','Rev3M'], ['fRev3M2','Rev3M2'], ['fEps3M','Eps3M'], ['fEps3M2','Eps3M2'],
+    ['fR40FCF','R40FCF'], ['fR40EBIT','R40EBIT'],
+  ];
+  for(const [fid, key] of checks){
+    const range = parseRangeFilter(getFilterValue(fid), key);
+    if(range && !(d[key]!=null && d[key] >= range.lo && d[key] <= range.hi)) return false;
+  }
+  return true;
+}
+
+function renderPortfolio(){
+  const thead = document.getElementById('theadPortfolio');
+  const tbody = document.getElementById('tbodyPortfolio');
+  const empty = document.getElementById('portfolioEmpty');
+
+  const active = document.activeElement;
+  const activeDomId = (active && active.classList && active.classList.contains('col-filter') && active.id && active.id.startsWith('port_'))
+    ? active.id : null;
+  const selStart = activeDomId != null ? active.selectionStart : null;
+  const selEnd = activeDomId != null ? active.selectionEnd : null;
+
+  buildHeaderInto(thead, true, {
+    sortKey: portfolioSortKey,
+    onSort: onPortfolioSort,
+    showFilters: true,
+    idPrefix: 'port_'
+  });
+
+  if(activeDomId){
+    const el = document.getElementById(activeDomId);
+    if(el){
+      el.focus();
+      try{ if(selStart != null) el.setSelectionRange(selStart, selEnd); }catch(e){}
+    }
+  }
+
+  tbody.innerHTML = '';
+
+  if(!portfolioTickers.length){
+    empty.style.display = 'block';
+    renderPortfolioChips();
+    renderPortfolioStats();
+    return;
+  }
+  empty.style.display = 'none';
+
+  // Apply the same metric filters used by the Screener, then sort
+  let ordered = portfolioTickers.filter(t=>{
+    const d = findTickerData(t);
+    return passesMetricFilters(d);
+  });
+
+  ordered = ordered.slice().sort((ta, tb)=>{
+    const da = findTickerData(ta);
+    const db = findTickerData(tb);
+    let va = da ? da[portfolioSortKey] : null;
+    let vb = db ? db[portfolioSortKey] : null;
+    if(portfolioSortKey === 'Ticker'){
+      va = ta; vb = tb;
+      return portfolioSortDir * String(va).localeCompare(String(vb));
+    }
+    const aNull = va===null || va===undefined;
+    const bNull = vb===null || vb===undefined;
+    if(aNull && bNull) return 0;
+    if(aNull) return 1;
+    if(bNull) return -1;
+    if(va < vb) return -1 * portfolioSortDir;
+    if(va > vb) return  1 * portfolioSortDir;
+    return 0;
+  });
+
+  ordered.forEach(t=>{
+    const d = findTickerData(t);
+    const tr = document.createElement('tr');
+    tr.innerHTML = COLS.map(c=>{
+      if(c.key==='Ticker') return `<td class="sticky-col">${tickerCellHTML(d ? d.Ticker : t, d)}</td>`;
+      const v = d ? d[c.key] : null;
+      if((v===null || v===undefined) && c.key !== 'WoWGrade') return `<td><span class="na">-</span></td>`;
+      return `<td>${fmt(v, c.fmt, c.key, d)}</td>`;
+    }).join('');
+    tbody.appendChild(tr);
+  });
+  renderPortfolioChips();
+  renderPortfolioStats();
+}
+
+// Metrics shown, with the same higher/lower-is-better direction used elsewhere
+// (valuation multiples are "better" when cheaper; everything else "better" when higher).
+const PORTFOLIO_STAT_FIELDS = [
+  {key:'PE',     label:'Median PE',              fmt:v=>v.toFixed(1)+'x',                 dir:'lower',  filter:d=>d.PE!=null && d.PE>0 && d.PE<200},
+  {key:'ROIC',   label:'Median ROIC',             fmt:v=>(v>=0?'+':'')+v.toFixed(1)+'%',   dir:'higher', filter:d=>d.ROIC!=null},
+  {key:'FCF',    label:'Median FCF Margin',       fmt:v=>(v>=0?'+':'')+v.toFixed(1)+'%',   dir:'higher', filter:d=>d.FCF!=null},
+  {key:'EBIT',   label:'Median EBIT Margin',      fmt:v=>(v>=0?'+':'')+v.toFixed(1)+'%',   dir:'higher', filter:d=>d.EBIT!=null},
+  {key:'EVS',    label:'Median EV/S',             fmt:v=>v.toFixed(1)+'x',                 dir:'lower',  filter:d=>d.EVS!=null && d.EVS>0},
+  {key:'EVEBIT', label:'Median EV/EBIT',          fmt:v=>v.toFixed(1)+'x',                 dir:'lower',  filter:d=>d.EVEBIT!=null && d.EVEBIT>0},
+  {key:'RevY1',  label:'Median Rev YoY (FY1E)',   fmt:v=>(v>=0?'+':'')+v.toFixed(1)+'%',   dir:'higher', filter:d=>d.RevY1!=null},
+  {key:'RevY2',  label:'Median Rev YoY (FY2E)',   fmt:v=>(v>=0?'+':'')+v.toFixed(1)+'%',   dir:'higher', filter:d=>d.RevY2!=null},
+  {key:'EpsY1',  label:'Median EPS YoY (FY1E)',   fmt:v=>(v>=0?'+':'')+v.toFixed(1)+'%',   dir:'higher', filter:d=>d.EpsY1!=null},
+  {key:'EpsY2',  label:'Median EPS YoY (FY2E)',   fmt:v=>(v>=0?'+':'')+v.toFixed(1)+'%',   dir:'higher', filter:d=>d.EpsY2!=null},
+];
+
+function renderPortfolioStats(){
+  const row = document.getElementById('portfolioStatsRow');
+  if(!row) return;
+
+  const portfolioData = portfolioTickers
+    .map(t=>findTickerData(t))
+    .filter(Boolean);
+
+  if(!portfolioData.length){
+    row.innerHTML = `<div class="stat" style="grid-column:1/-1;"><div class="label">Portfolio Medians</div><div class="value na">Add tickers to see portfolio medians vs. the screener benchmark</div></div>`;
+    return;
+  }
+
+  const cells = PORTFOLIO_STAT_FIELDS.map(f=>{
+    const vals = portfolioData.filter(f.filter).map(d=>d[f.key]);
+    if(!vals.length) return {label:f.label, value:'–', cls:''};
+    const v = median(vals);
+    const bench = screenerMedians[f.key];
+    let cls = '';
+    if(bench!=null){
+      const better = f.dir==='higher' ? v > bench : v < bench;
+      cls = better ? 'pos' : '';
+    }
+    return {label:f.label, value:f.fmt(v), cls};
+  });
+
+  row.innerHTML = cells.map(s=>`<div class="stat"><div class="label">${s.label}</div><div class="value ${s.cls}">${s.value}</div></div>`).join('');
+}
+
+function addPortfolioTickers(){
+  const input = document.getElementById('fPortfolioAdd');
+  const raw = input.value.trim();
+  if(!raw) return;
+
+  const parts = raw.split(/[\s,;]+/)
+    .map(normalizeTickerInput)
+    .filter(Boolean);
+
+  let added = false;
+  let invalid = [];
+  parts.forEach(t=>{
+    // Only allow tickers that exist in the screener. Resolve plain symbols
+    // to their canonical form (e.g. ZYME -> ZYME*) when applicable.
+    const row = findTickerData(t);
+    if(!row){
+      invalid.push(t);
+      return;
+    }
+    const canonical = normalizeTickerInput(row.Ticker);
+    if(!portfolioTickers.includes(canonical)){
+      portfolioTickers.push(canonical);
+      added = true;
+    }
+  });
+
+  input.value = '';
+  if(added){
+    portfolioDirty = true;
+    setPortfolioStatus(
+      invalid.length ? 'Added valid ticker(s); not found: ' + invalid.join(', ') : 'Unsaved changes',
+      invalid.length ? 'neg' : 'na'
+    );
+  } else if(invalid.length){
+    setPortfolioStatus('Ticker(s) not found: ' + invalid.join(', '), 'neg');
+  }
+  renderPortfolio();
+}
+
+document.getElementById('portfolioAddBtn').addEventListener('click', addPortfolioTickers);
+document.getElementById('fPortfolioAdd').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); addPortfolioTickers(); } });
+document.getElementById('portfolioSaveBtn').addEventListener('click', savePortfolioToStorage);
+document.getElementById('portfolioClearBtn').addEventListener('click', ()=>{
+  portfolioTickers = [];
+  portfolioDirty = true;
+  setPortfolioStatus('Unsaved changes', 'na');
+  renderPortfolio();
+});
+
+if(portfolioTickers.length) setPortfolioStatus(portfolioTickers.length + ' ticker(s) loaded from last save', 'pos');
+
+// ---- Percentile Thresholds: lower bound of each 5-point bracket (P5..P95), per metric ----
+// Uses the same linear-interpolation method as Excel's PERCENTILE()/numpy's default,
+// so this matches the standalone decile workbook exactly.
+function percentileSorted(sortedArr, p){
+  if(!sortedArr.length) return null;
+  const idx = (sortedArr.length - 1) * p;
+  const lo = Math.floor(idx), hi = Math.ceil(idx);
+  if(lo === hi) return sortedArr[lo];
+  return sortedArr[lo] + (sortedArr[hi] - sortedArr[lo]) * (idx - lo);
+}
+
+function fmtPlain(v, type){
+  if(v === null || v === undefined || Number.isNaN(v)) return '<span class="na">–</span>';
+  switch(type){
+    case 'x': return v.toFixed(1)+'x';
+    case 'pct': return (v>=0?'+':'')+v.toFixed(1)+'%';
+    case 'r40': return (v>=0?'+':'')+v.toFixed(1)+'%';
+    case 'score': return v.toFixed(2);
+    case 'delta': return (v>=0?'+':'')+v.toFixed(3);
+    case 'compscore': return (Math.round(v / 0.05) * 0.05).toFixed(2);
+    default: return v;
+  }
+}
+
+let decilesRendered = false;
+function renderDeciles(){
+  if(decilesRendered) return; // dataset is static for the session — compute once
+  const thead = document.getElementById('theadDecile');
+  const tbody = document.getElementById('tbodyDecile');
+  const decCols = COLS.filter(c=>c.key!=='Ticker' && c.key!=='FwdR');
+  const deciles = [5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95];
+
+  thead.innerHTML = '';
+  tbody.innerHTML = '';
+
+  const tr = document.createElement('tr');
+  const th0 = document.createElement('th');
+  th0.textContent = 'Percentile';
+  th0.className = 'sticky-col';
+  tr.appendChild(th0);
+  decCols.forEach(c=>{
+    const th = document.createElement('th');
+    th.textContent = c.label;
+    if(c.color) th.classList.add('sub-'+c.color);
+    tr.appendChild(th);
+  });
+  thead.appendChild(tr);
+
+  // Precompute sorted arrays for both universes
+  const sortedEx = {};
+  const sortedAst = {};
+  decCols.forEach(c=>{
+    sortedEx[c.key] = data
+      .filter(d=>d[c.key]!=null && !isAsteriskTicker(d))
+      .map(d=>d[c.key])
+      .sort((a,b)=>a-b);
+    sortedAst[c.key] = data
+      .filter(d=>d[c.key]!=null && isAsteriskTicker(d))
+      .map(d=>d[c.key])
+      .sort((a,b)=>a-b);
+  });
+
+  function cellHTML(vEx, vAst, fmt){
+    const primary = vEx==null ? '<span class="na">–</span>' : fmtPlain(vEx, fmt);
+    const secondary = vAst==null ? '<span class="na">–</span>' : fmtPlain(vAst, fmt);
+    return `<div class="decile-pair"><span class="primary">${primary}</span><span class="secondary">${secondary} *</span></div>`;
+  }
+
+  deciles.forEach(p=>{
+    const tr = document.createElement('tr');
+    const td0 = document.createElement('td');
+    td0.className = 'sticky-col';
+    td0.textContent = 'P' + p;
+    tr.appendChild(td0);
+    decCols.forEach(c=>{
+      const vEx = percentileSorted(sortedEx[c.key], p/100);
+      const vAst = percentileSorted(sortedAst[c.key], p/100);
+      const td = document.createElement('td');
+      td.innerHTML = cellHTML(vEx, vAst, c.fmt);
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  decilesRendered = true;
+}
+
+function mean(a){ return a.reduce((x,y)=>x+y,0)/(a.length||1); }
+function median(a){ const s=a.filter(v=>typeof v==='number' && isFinite(v)).sort((x,y)=>x-y); const m=Math.floor(s.length/2); return s.length%2?s[m]:(s[m-1]+s[m])/2; }
+
+// ---- Ticker highlighting (shared between Screener search and Charts panel) ----
+const HIGHLIGHT_PALETTE = ['#e8a33d','#3ecf8e','#e85d5d','#5b9bd5','#c77dff','#f2c14e','#4dd0e1','#ff8a5c','#9ccc65','#f06292'];
+
+function getHighlightTerms(){
+  const q = document.getElementById('search').value.trim().toUpperCase();
+  // Same separators as applyFilters; strip trailing/leading * so "ZYME" highlights ZYME*
+  return q.split(/[,;\s]+/).map(t=>t.trim()).filter(Boolean)
+    .map(t=>t.replace(/^\*+|\*+$/g, ''));
+}
+
+// Returns a Map of TICKER -> color. Only exact tickers found in the dataset are included,
+// so a partial single-term search doesn't highlight anything until it matches a real ticker.
+function getHighlightMap(){
+  const terms = getHighlightTerms();
+  const map = new Map();
+  // Build lookup of base ticker (without trailing *) -> actual ticker key used in data
+  const known = new Map();
+  data.forEach(d=>{
+    const t = (d.Ticker||'').toUpperCase();
+    known.set(t, t);
+    known.set(tickerBase(t), t);
+  });
+  terms.forEach((t)=>{
+    const key = known.get(t) || known.get(t.endsWith('*') ? t.slice(0, -1) : t);
+    if(key && !map.has(key)) map.set(key, HIGHLIGHT_PALETTE[map.size % HIGHLIGHT_PALETTE.length]);
+  });
+  return map;
+}
+
+function updateHighlights(){
+  const map = getHighlightMap();
+  const legend = document.getElementById('highlightLegend');
+  legend.innerHTML = [...map.entries()].map(([t,c])=>
+    `<div class="highlight-chip"><span class="dot" style="background:${c}"></span>${t}</div>`
+  ).join('');
+  const chartsVisible = document.getElementById('chartView').style.display !== 'none';
+  if(chartsRendered && chartsVisible){ renderCharts(true); }
+  else { chartsRendered = false; } // force a rebuild next time the Charts tab is opened
+}
+
+let screenerMedians = {};
+function isAsteriskTicker(d){
+  const t = String(d && d.Ticker || '').trim();
+  return t.startsWith('*') || t.endsWith('*');
+}
+function metricMedian(key, filterFn){
+  return median(data.filter(d=>filterFn(d)).map(d=>d[key]));
+}
+function formatMedianValue(v, key){
+  if(v==null || !isFinite(v)) return '–';
+  if(key==='PE' || key==='EVS' || key==='EVEBIT') return v.toFixed(1)+'x';
+  return (v>=0?'+':'')+v.toFixed(1)+'%';
+}
+function renderStats(){
+  // Primary medians intentionally exclude any ticker carrying an asterisk
+  // at either end. Secondary medians use the complete dataset.
+  const clean = d => !isAsteriskTicker(d);
+  const all = () => true;
+
+  const medPE = median(data.filter(d=>clean(d) && d.PE!=null && d.PE>0 && d.PE<200).map(d=>d.PE));
+  const medROIC = median(data.filter(d=>clean(d) && d.ROIC!=null).map(d=>d.ROIC));
+  const medFCF = median(data.filter(d=>clean(d) && d.FCF!=null).map(d=>d.FCF));
+  const medEBIT = median(data.filter(d=>clean(d) && d.EBIT!=null).map(d=>d.EBIT));
+  const medEVS = median(data.filter(d=>clean(d) && d.EVS!=null && d.EVS>0).map(d=>d.EVS));
+  const medEVEBIT = median(data.filter(d=>clean(d) && d.EVEBIT!=null && d.EVEBIT>0).map(d=>d.EVEBIT));
+  const medRev = median(data.filter(d=>clean(d) && d.RevY1!=null).map(d=>d.RevY1));
+  const medRev2 = median(data.filter(d=>clean(d) && d.RevY2!=null).map(d=>d.RevY2));
+  const medEps = median(data.filter(d=>clean(d) && d.EpsY1!=null).map(d=>d.EpsY1));
+  const medEps2 = median(data.filter(d=>clean(d) && d.EpsY2!=null).map(d=>d.EpsY2));
+
+  const allPE = median(data.filter(d=>all(d) && d.PE!=null && d.PE>0 && d.PE<200).map(d=>d.PE));
+  const allROIC = median(data.filter(d=>all(d) && d.ROIC!=null).map(d=>d.ROIC));
+  const allFCF = median(data.filter(d=>all(d) && d.FCF!=null).map(d=>d.FCF));
+  const allEBIT = median(data.filter(d=>all(d) && d.EBIT!=null).map(d=>d.EBIT));
+  const allEVS = median(data.filter(d=>all(d) && d.EVS!=null && d.EVS>0).map(d=>d.EVS));
+  const allEVEBIT = median(data.filter(d=>all(d) && d.EVEBIT!=null && d.EVEBIT>0).map(d=>d.EVEBIT));
+  const allRev = median(data.filter(d=>all(d) && d.RevY1!=null).map(d=>d.RevY1));
+  const allRev2 = median(data.filter(d=>all(d) && d.RevY2!=null).map(d=>d.RevY2));
+  const allEps = median(data.filter(d=>all(d) && d.EpsY1!=null).map(d=>d.EpsY1));
+  const allEps2 = median(data.filter(d=>all(d) && d.EpsY2!=null).map(d=>d.EpsY2));
+
+  screenerMedians = {PE:medPE, ROIC:medROIC, FCF:medFCF, EBIT:medEBIT, EVS:medEVS, EVEBIT:medEVEBIT, RevY1:medRev, RevY2:medRev2, EpsY1:medEps, EpsY2:medEps2};
+
+  const stats = [
+    {label:'Median PE', value:formatMedianValue(medPE,'PE'), secondary:formatMedianValue(allPE,'PE'), cls:''},
+    {label:'Median ROIC', value:formatMedianValue(medROIC,'ROIC'), secondary:formatMedianValue(allROIC,'ROIC'), cls:''},
+    {label:'Median FCF Margin', value:formatMedianValue(medFCF,'FCF'), secondary:formatMedianValue(allFCF,'FCF'), cls:''},
+    {label:'Median EBIT Margin', value:formatMedianValue(medEBIT,'EBIT'), secondary:formatMedianValue(allEBIT,'EBIT'), cls:''},
+    {label:'Median EV/S', value:formatMedianValue(medEVS,'EVS'), secondary:formatMedianValue(allEVS,'EVS'), cls:''},
+    {label:'Median EV/EBIT', value:formatMedianValue(medEVEBIT,'EVEBIT'), secondary:formatMedianValue(allEVEBIT,'EVEBIT'), cls:''},
+    {label:'Median Rev YoY (FY1E)', value:formatMedianValue(medRev,'RevY1'), secondary:formatMedianValue(allRev,'RevY1'), cls:''},
+    {label:'Median Rev YoY (FY2E)', value:formatMedianValue(medRev2,'RevY2'), secondary:formatMedianValue(allRev2,'RevY2'), cls:''},
+    {label:'Median EPS YoY (FY1E)', value:formatMedianValue(medEps,'EpsY1'), secondary:formatMedianValue(allEps,'EpsY1'), cls:''},
+    {label:'Median EPS YoY (FY2E)', value:formatMedianValue(medEps2,'EpsY2'), secondary:formatMedianValue(allEps2,'EpsY2'), cls:''},
+  ];
+  const row = document.getElementById('statsRow');
+  row.innerHTML = stats.map(s=>`
+    <div class="stat">
+      <div class="label">${s.label}</div>
+      <div class="value ${s.cls}">${s.value}</div>
+      <div class="value stat-secondary">(${s.secondary})</div>
+    </div>`).join('');
+}
+
+const markerLinePlugin = {
+  id: 'markerLine',
+  afterDatasetsDraw(chart){
+    const opts = chart.config.options.plugins && chart.config.options.plugins.markerLine;
+    if(!opts || !opts.markers || !opts.markers.length) return;
+    const {ctx, chartArea, scales} = chart;
+    opts.markers.forEach(mk=>{
+      const b = mk.boundary;
+      const lo = Math.floor(b), hi = Math.ceil(b);
+      const pLo = scales.x.getPixelForTick(lo);
+      const pHi = scales.x.getPixelForTick(hi);
+      const xPix = lo===hi ? pLo : pLo + (pHi-pLo)*(b-lo);
+      ctx.save();
+      ctx.beginPath();
+      ctx.strokeStyle = mk.color;
+      if(mk.dash) ctx.setLineDash(mk.dash);
+      ctx.lineWidth = mk.width || 1.5;
+      ctx.moveTo(xPix, chartArea.top);
+      ctx.lineTo(xPix, chartArea.bottom);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = mk.color;
+      ctx.font = mk.font || '11px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(mk.label || '', xPix, mk.labelY!=null ? mk.labelY : chartArea.top - 6);
+      ctx.restore();
+    });
+  }
+};
+Chart.register(markerLinePlugin);
+
+// Builds a histogram with exactly 10 bars using equal-width bins across the
+// actual data range (deciles of the x-axis / value range, not of population).
+// fieldKey lets us look up each highlighted ticker's raw value for this metric.
+function histogram(canvasId, values, color, xlabel, fieldKey, highlightMap){
+  const BINS = 10;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const step = (max-min)/BINS || 1;
+  const counts = Array(BINS).fill(0);
+  values.forEach(v=>{
+    let i = Math.floor((v-min)/step);
+    if(i<0) i=0;
+    if(i>BINS-1) i=BINS-1;
+    counts[i]++;
+  });
+  const labels = [];
+  for(let i=0;i<BINS;i++){
+    const lo = min+i*step, hi = min+(i+1)*step;
+    labels.push(`${lo.toFixed(0)} to ${hi.toFixed(0)}%`);
+  }
+  const med = median(values);
+  const posFor = (v)=> Math.max(0, Math.min(BINS-1, (v-min)/step - 0.5));
+
+  const markers = [{
+    boundary: posFor(med), color:'#e7ebee', dash:[6,4], width:1.5,
+    label:`Median: ${med>=0?'+':''}${med.toFixed(1)}%`
+  }];
+
+  if(highlightMap && highlightMap.size){
+    let stack = 0;
+    highlightMap.forEach((color, ticker)=>{
+      const d = data.find(x=>(x.Ticker||'').toUpperCase()===ticker);
+      const v = d ? d[fieldKey] : null;
+      if(v==null) return; // no data at all for this metric — nothing to plot
+      const offScale = v<min || v>max;
+      markers.push({
+        boundary: posFor(v), color, dash: offScale ? [2,2] : null, width:2,
+        label: offScale ? `${ticker} (${v>=0?'+':''}${v.toFixed(0)}%, off-scale)` : ticker,
+        labelY: (18 - stack*13)
+      });
+      stack++;
+    });
+  }
+
+  return new Chart(document.getElementById(canvasId), {
+    type:'bar',
+    data:{labels, datasets:[{data:counts, backgroundColor:color}]},
+    options:{
+      maintainAspectRatio:false,
+      layout:{padding:{top:20 + (highlightMap && highlightMap.size ? highlightMap.size*13 : 0)}},
+      plugins:{
+        legend:{display:false},
+        markerLine:{markers}
+      },
+      scales:{
+        x:{title:{display:true,text:xlabel}, ticks:{maxRotation:45, minRotation:45}},
+        y:{title:{display:true,text:'# companies'}}
+      }
+    }
+  });
+}
+
+let chartsRendered = false;
+let chartInstances = {};
+function destroyCharts(){
+  Object.values(chartInstances).forEach(c=>{ if(c) c.destroy(); });
+  chartInstances = {};
+}
+
+function renderCharts(force){
+  if(chartsRendered && !force) return;
+  chartsRendered = true;
+  destroyCharts();
+  Chart.defaults.color = '#8a95a1';
+  Chart.defaults.font.family = "'IBM Plex Mono',monospace";
+  Chart.defaults.borderColor = '#232a32';
+
+  const highlightMap = getHighlightMap();
+
+  // --- Generic scatter builder: base (dim) cloud + one colored point per highlighted ticker ---
+  // Caps an axis at a high percentile (with light padding) instead of the true max,
+  // so a single extreme outlier can't stretch the whole plot and squash everything else.
+  function axisCap(vals){
+    if(!vals.length) return undefined;
+    const sorted = vals.slice().sort((a,b)=>a-b);
+    const actualMax = sorted[sorted.length-1];
+    const p97 = percentileSorted(sorted, 0.97);
+    if(p97==null) return undefined;
+    return Math.min(actualMax, p97*1.12);
+  }
+
+  function buildScatter(canvasId, xKey, yKey, xLabel, yLabel, filterFn, tooltipFmt, color, trendFn){
+    const baseSet = data.filter(d=>!isAsteriskTicker(d) && filterFn(d) && !highlightMap.has((d.Ticker||'').toUpperCase()))
+      .map(d=>({x:d[xKey], y:d[yKey], label:d.Ticker}));
+
+    // Draw order: base cloud in back, trendline in the middle, highlighted
+    // tickers always painted last so their markers sit in front of everything else.
+    const datasets = [{
+      label:'All',
+      data: baseSet,
+      backgroundColor: color,
+      pointRadius:3,
+      order:1
+    }];
+
+    if(trendFn && baseSet.length){
+      const xs = baseSet.map(p=>p.x).filter(x=>x!=null);
+      const xMin = Math.min(...xs), xMax = Math.max(...xs);
+      const steps = 40;
+      const trendPts = [];
+      for(let i=0;i<=steps;i++){
+        const x = xMin + (xMax-xMin)*(i/steps);
+        const y = trendFn(x);
+        if(y!=null) trendPts.push({x, y});
+      }
+      datasets.push({
+        type:'line',
+        label:'Fair-value trend',
+        data: trendPts,
+        borderColor:'#e7ebee',
+        borderWidth:1.5,
+        borderDash:[6,4],
+        pointRadius:0,
+        fill:false,
+        tension:0.15,
+        order:2
+      });
+    }
+
+    highlightMap.forEach((hcolor, ticker)=>{
+      const d = data.find(x=>(x.Ticker||'').toUpperCase()===ticker);
+      if(!d || d[xKey]==null || d[yKey]==null) return;
+      datasets.push({
+        label: ticker,
+        data:[{x:d[xKey], y:d[yKey], label:d.Ticker}],
+        backgroundColor: hcolor,
+        borderColor: hcolor,
+        pointRadius:7,
+        pointHoverRadius:9,
+        pointStyle:'circle',
+        order:3
+      });
+    });
+
+    // Cap axes using every plotted point (base + highlighted), so a highlighted
+    // outlier can't stretch the scale even though it bypasses the base filterFn.
+    const allX = datasets.flatMap(ds=>ds.data.map(p=>p.x)).filter(x=>x!=null);
+    const allY = datasets.flatMap(ds=>ds.data.map(p=>p.y)).filter(y=>y!=null);
+    const xMaxCap = axisCap(allX);
+    const yMaxCap = axisCap(allY);
+
+    return new Chart(document.getElementById(canvasId), {
+      type:'scatter',
+      data:{datasets},
+      options:{
+        maintainAspectRatio:false,
+        plugins:{
+          legend:{display:false},
+          tooltip:{callbacks:{label:(ctx)=>tooltipFmt(ctx.raw)}}
+        },
+        scales:{
+          x:{min:0, max:xMaxCap, title:{display:true,text:xLabel}},
+          y:{max:yMaxCap, title:{display:true,text:yLabel}}
+        }
+      }
+    });
+  }
+
+  chartInstances.scatter = buildScatter(
+    'scatterChart', 'RevY1', 'EVS',
+    'Revenue Est YoY % (FY1E)', 'EV/S',
+    d=>d.EVS!=null && d.EVS>0 && d.EVS<50 && d.RevY1!=null && Math.abs(d.RevY1)<200,
+    r=>`${r.label}: EV/S ${r.y.toFixed(1)}x, Rev YoY ${r.x.toFixed(1)}%`,
+    'rgba(232,163,61,0.35)',
+    x => valModel.a + valModel.b*Math.log(1 + x/100)
+  );
+
+  chartInstances.scatter2 = buildScatter(
+    'scatterChart2', 'EpsY1', 'PE',
+    'EPS Est YoY % (FY1E)', 'PE',
+    d=>d.PE!=null && d.PE>0 && d.PE<150 && d.EpsY1!=null && Math.abs(d.EpsY1)<300,
+    r=>`${r.label}: PE ${r.y.toFixed(1)}x, EPS YoY ${r.x.toFixed(1)}%`,
+    'rgba(91,155,213,0.35)',
+    x => peModel.a + peModel.b*Math.log(1 + x/100)
+  );
+
+  const roicVals = data.filter(d=>!isAsteriskTicker(d) && d.ROIC!=null && Math.abs(d.ROIC)<80).map(d=>d.ROIC);
+  chartInstances.roic = histogram('roicHist', roicVals, '#e8a33d', 'ROIC decile', 'ROIC', highlightMap);
+
+  const fcfVals = data.filter(d=>!isAsteriskTicker(d) && d.FCF!=null && Math.abs(d.FCF)<100).map(d=>d.FCF);
+  chartInstances.fcf = histogram('fcfHist', fcfVals, '#c77dff', 'FCF Margin decile', 'FCF', highlightMap);
+
+  const revVals = data.filter(d=>!isAsteriskTicker(d) && d.RevY1!=null && Math.abs(d.RevY1)<150).map(d=>d.RevY1);
+  chartInstances.rev = histogram('revHist', revVals, '#3ecf8e', 'Revenue YoY (FY1E) decile', 'RevY1', highlightMap);
+
+  const revVals2 = data.filter(d=>!isAsteriskTicker(d) && d.RevY2!=null && Math.abs(d.RevY2)<150).map(d=>d.RevY2);
+  chartInstances.rev2 = histogram('revHist2', revVals2, '#3ecf8e', 'Revenue YoY (FY2E) decile', 'RevY2', highlightMap);
+
+  const epsVals = data.filter(d=>!isAsteriskTicker(d) && d.EpsY1!=null && Math.abs(d.EpsY1)<200).map(d=>d.EpsY1);
+  chartInstances.eps = histogram('epsHist', epsVals, '#e85d5d', 'EPS YoY (FY1E) decile', 'EpsY1', highlightMap);
+
+  const epsVals2 = data.filter(d=>!isAsteriskTicker(d) && d.EpsY2!=null && Math.abs(d.EpsY2)<200).map(d=>d.EpsY2);
+  chartInstances.eps2 = histogram('epsHist2', epsVals2, '#e85d5d', 'EPS YoY (FY2E) decile', 'EpsY2', highlightMap);
+
+  const rev3mVals = data.filter(d=>!isAsteriskTicker(d) && d.Rev3M!=null && Math.abs(d.Rev3M)<60).map(d=>d.Rev3M);
+  chartInstances.rev3m = histogram('rev3mHist', rev3mVals, '#4dd0e1', 'Revenues FY1E - 3M decile', 'Rev3M', highlightMap);
+
+  const rev3mVals2 = data.filter(d=>!isAsteriskTicker(d) && d.Rev3M2!=null && Math.abs(d.Rev3M2)<60).map(d=>d.Rev3M2);
+  chartInstances.rev3m2 = histogram('rev3mHist2', rev3mVals2, '#4dd0e1', 'Revenues FY2E - 3M decile', 'Rev3M2', highlightMap);
+}
+
+// ---- Composite Score: weighted sum of percentile ranks across 11 components ----
+// Weights sum to exactly 100%. Valuation component uses (100 - percentile) since a
+// cheaper multiple is "better", unlike the growth/margin components where a higher
+// percentile is directly better. Missing data is treated as a signal in its own right:
+// a component with no value contributes 0 (the worst possible score for that
+// component) rather than being skipped and reweighted away — a ticker with thin
+// data coverage is deliberately penalized, not given a free pass on the metrics it lacks.
+// Real observed data is floored at P1 on every one of the 11 components (10 growth/
+// quality metrics + valuation) — P0 is reserved exclusively for missing data, so the
+// worst real value and "no data" are never indistinguishable.
+// Standard (non-asterisk): growth estimates = 4×0.075 = 0.30
+// Asterisk (A1): same total growth budget 0.30 split across 6 horizons = 6×0.05
+const COMPOSITE_WEIGHTS = {
+  ROIC:   0.14,
+  FCF:    0.11,
+  RevY1:  0.075,
+  RevY2:  0.075,
+  EpsY1:  0.075,
+  EpsY2:  0.075,
+  Rev3M:  0.075, // Revenue Revisions FY1E
+  Rev3M2: 0.075, // Revenue Revisions FY2E
+  Eps3M:  0.075, // EPS Revisions FY1E
+  Eps3M2: 0.075, // EPS Revisions FY2E
+  Valuation: 0.15,
+};
+const COMPOSITE_GROWTH_KEYS_STD = ['RevY1','RevY2','EpsY1','EpsY2'];
+const COMPOSITE_GROWTH_KEYS_AST = ['RevY1','RevY2','RevY3','EpsY1','EpsY2','EpsY3'];
+const COMPOSITE_GROWTH_W_STD = 0.075;
+const COMPOSITE_GROWTH_W_AST = 0.05; // 6 × 0.05 = 0.30
+const COMPOSITE_OTHER_KEYS = ['ROIC','FCF','Rev3M','Rev3M2','Eps3M','Eps3M2'];
+
+function standardizedCompScore(pctile){
+  return 0.50 + (pctile / 100) * (1.00 - 0.50);
+}
+
+function processDataAndRender(){
+  // Valuation models
+  const valPts = data
+    .filter(d=>!isAsteriskTicker(d) && d.EVS!=null && d.EVS>0 && d.EVS<60 && d.RevY1!=null && d.RevY1>-95 && d.RevY1<300)
+    .map(d=>({x: Math.log(1 + d.RevY1/100), y: d.EVS}));
+  valModel = computeValuationModel(valPts.length ? valPts : [{x:0,y:0}]);
+
+  const peValPts = data
+    .filter(d=>!isAsteriskTicker(d) && d.PE!=null && d.PE>0 && d.PE<150 && d.EpsY1!=null && d.EpsY1>-95 && d.EpsY1<300)
+    .map(d=>({x: Math.log(1 + d.EpsY1/100), y: d.PE}));
+  peModel = computeValuationModel(peValPts.length ? peValPts : [{x:0,y:0}]);
+
+  // Growth-tier markers
+  rebuildMarkerCategories();
+  if (typeof renderColorFilters === "function") renderColorFilters();
+
+  // Composite scores
+  data.forEach(d=>{
+    const isAst = isAsteriskTicker(d);
+    let scoreSum = 0;
+
+    COMPOSITE_OTHER_KEYS.forEach(key=>{
+      const w = COMPOSITE_WEIGHTS[key];
+      const rawRank = d[key]!=null ? percentRank(getSortedVals(key), d[key]) : null;
+      const rank = rawRank!=null ? Math.max(rawRank, 1) : null;
+      scoreSum += (rank!=null ? rank : 0) * w;
+    });
+
+    const growthKeys = isAst ? COMPOSITE_GROWTH_KEYS_AST : COMPOSITE_GROWTH_KEYS_STD;
+    const growthW = isAst ? COMPOSITE_GROWTH_W_AST : COMPOSITE_GROWTH_W_STD;
+    growthKeys.forEach(key=>{
+      const rawRank = d[key]!=null ? percentRank(getSortedVals(key), d[key]) : null;
+      const rank = rawRank!=null ? Math.max(rawRank, 1) : null;
+      scoreSum += (rank!=null ? rank : 0) * growthW;
+    });
+
+    const valKey = (d.EBIT!=null && d.EBIT < 3) ? 'EVS' : 'EVEBIT';
+    const rawRank = d[valKey]!=null ? percentRank(getSortedVals(valKey), d[valKey]) : null;
+    const invertedRank = rawRank!=null ? Math.max(100 - rawRank, 1) : 0;
+    scoreSum += invertedRank * COMPOSITE_WEIGHTS.Valuation;
+
+    d.CompScoreRaw = scoreSum;
+  });
+
+  const compScoreRawSorted = data.filter(d=>d.CompScoreRaw!=null).map(d=>d.CompScoreRaw).sort((a,b)=>a-b);
+  data.forEach(d=>{
+    if(d.CompScoreRaw == null){ d.CompScore = null; return; }
+    const pctile = percentRank(compScoreRawSorted, d.CompScoreRaw);
+    d.CompScore = pctile != null ? standardizedCompScore(pctile) : null;
+  });
+
+  // Clear caches that depend on the dataset
+  if (typeof sortedValsCache !== "undefined") {
+    Object.keys(sortedValsCache).forEach(k => delete sortedValsCache[k]);
+  }
+  delete sortedValsCache.CompScore;
+  if (typeof computeColorThresholds === "function") computeColorThresholds();
+  if (typeof decilesRendered !== "undefined") decilesRendered = false;
+  if (typeof chartsRendered !== "undefined") chartsRendered = false;
+
+  filtered = data.slice();
+  renderStats();
+  applyAll();
+  updateHighlights();
+  const countEl = document.getElementById("countVal");
+  if (countEl) countEl.textContent = filtered.length.toLocaleString() + " / " + data.length.toLocaleString();
+}
+
+async function loadAndInit(isRefresh){
+  const status = document.getElementById("dataLoadStatus");
+  if (status) {
+    status.textContent = isRefresh ? "Refreshing data…" : "Loading data…";
+    status.className = "na";
+  }
+  try {
+    RAW = await fetchRawData(DATA_URL);
+    data = RAW.filter(d => d && d.Ticker);
+    dataLoadError = null;
+    if (status) {
+      status.textContent = "Loaded " + data.length.toLocaleString() + " tickers";
+      status.className = "pos";
+    }
+    processDataAndRender();
+  } catch (err) {
+    console.error(err);
+    dataLoadError = err;
+    data = [];
+    RAW = [];
+    if (status) {
+      status.textContent = "Load failed: " + (err && err.message ? err.message : String(err));
+      status.className = "neg";
+    }
+    const countEl = document.getElementById("countVal");
+    if (countEl) countEl.textContent = "0 / 0";
+    // Still render empty UI so controls remain usable
+    if (typeof renderStats === "function") renderStats();
+    if (typeof applyAll === "function") applyAll();
+  }
+}
+
+
+document.getElementById('refreshDataBtn') && document.getElementById('refreshDataBtn').addEventListener('click', () => loadAndInit(true));
+
+// Kick off data load once the page is ready
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => loadAndInit(false));
+} else {
+  loadAndInit(false);
+}
+</script>
