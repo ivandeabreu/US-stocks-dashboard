@@ -455,6 +455,23 @@ tbody tr:last-child td{border-bottom:none;}
 .neg{color:var(--red);}
 .na{color:var(--dim2);}
 
+/* ── Media tab: percentile letter grades ── */
+.grade{
+  display:inline-block;
+  min-width:20px;
+  padding:1px 6px;
+  border-radius:4px;
+  font-family:var(--mono);
+  font-weight:600;
+  font-size:12px;
+  letter-spacing:0.2px;
+}
+.grade-A{color:#00E5FF;background:rgba(0,229,255,0.12);}
+.grade-B{color:var(--green);background:var(--green-soft);}
+.grade-C{color:var(--amber);background:var(--amber-soft);}
+.grade-D{color:#ff9142;background:rgba(255,145,66,0.12);}
+.grade-E{color:var(--red);background:rgba(239,95,95,0.12);}
+
 /* ── Pager ── */
 .pager{
   display:flex;
@@ -726,6 +743,7 @@ tbody td{
 
     <div class="tabs">
       <div class="tab active" data-tab="table">Screener</div>
+      <div class="tab" data-tab="media">Media</div>
       <div class="tab" data-tab="charts">Charts</div>
       <div class="tab" data-tab="portfolio">Portfolio</div>
       <div class="tab" data-tab="deciles">Percentiles</div>
@@ -743,6 +761,25 @@ tbody td{
         <div>
           <button id="prevBtn">&larr; Prev</button>
           <button id="nextBtn">Next &rarr;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="mediaView" style="display:none;">
+    <div style="font-family:var(--mono);font-size:10.5px;letter-spacing:0.6px;text-transform:uppercase;color:var(--dim2);margin:0 0 8px;">
+      Media view — same universe as the Screener; margin &amp; valuation metrics shown as percentile letter grades (A = P80&ndash;P100 &hellip; E = P0&ndash;P19). FWD FINAL GRADE, WoW grade and C SCORE remain raw.
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead id="theadMedia"></thead>
+        <tbody id="tbodyMedia"></tbody>
+      </table>
+      <div class="pager">
+        <span id="mediaPageInfo"></span>
+        <div>
+          <button id="mediaPrevBtn">&larr; Prev</button>
+          <button id="mediaNextBtn">Next &rarr;</button>
         </div>
       </div>
     </div>
@@ -1090,19 +1127,89 @@ const COLS = [
   {key:'EVS', label:'EV/S', fmt:'x', group:'Valuation (NTM)'},
   {key:'EVEBIT', label:'EV/EBIT', fmt:'x', group:'Valuation (NTM)'},
   {key:'PE', label:'PE', fmt:'x', group:'Valuation (NTM)', filterId:'fPE'},
-  {key:'RevY1', label:'P1', fmt:'pct', group:'Revenue Est YoY %', color:'gold', filterId:'fRevY1'},
-  {key:'RevY2', label:'P2', fmt:'pct', group:'Revenue Est YoY %', color:'gold', filterId:'fRevY2'},
-  {key:'RevY3', label:'P3', fmt:'pct', group:'Revenue Est YoY %', color:'gold', filterId:'fRevY3'},
-  {key:'EpsY1', label:'P1', fmt:'pct', group:'EPS Est YoY %', color:'fuchsia', filterId:'fEpsY1'},
-  {key:'EpsY2', label:'P2', fmt:'pct', group:'EPS Est YoY %', color:'fuchsia', filterId:'fEpsY2'},
-  {key:'EpsY3', label:'P3', fmt:'pct', group:'EPS Est YoY %', color:'fuchsia', filterId:'fEpsY3'},
-  {key:'Rev3M', label:'P1', fmt:'pct', group:'Revenue Rev', color:'gold', filterId:'fRev3M'},
-  {key:'Rev3M2', label:'P2', fmt:'pct', group:'Revenue Rev', color:'gold', filterId:'fRev3M2'},
-  {key:'Eps3M', label:'P1', fmt:'pct', group:'EPS Rev', color:'fuchsia', filterId:'fEps3M'},
-  {key:'Eps3M2', label:'P2', fmt:'pct', group:'EPS Rev', color:'fuchsia', filterId:'fEps3M2'},
-  {key:'R40FCF', label:'FCF', fmt:'r40', group:'R40', filterId:'fR40FCF'},
-  {key:'R40EBIT', label:'EBIT', fmt:'r40', group:'R40', filterId:'fR40EBIT'},
+  {key:'RevY1', label:'P1', fmt:'pct', group:'FWD GROWTH', color:'gold', filterId:'fRevY1'},
+  {key:'RevY2', label:'P2', fmt:'pct', group:'FWD GROWTH', color:'gold', filterId:'fRevY2'},
+  {key:'RevY3', label:'P3', fmt:'pct', group:'FWD GROWTH', color:'gold', filterId:'fRevY3'},
+  {key:'EpsY1', label:'P1', fmt:'pct', group:'FWD GROWTH', color:'fuchsia', filterId:'fEpsY1'},
+  {key:'EpsY2', label:'P2', fmt:'pct', group:'FWD GROWTH', color:'fuchsia', filterId:'fEpsY2'},
+  {key:'EpsY3', label:'P3', fmt:'pct', group:'FWD GROWTH', color:'fuchsia', filterId:'fEpsY3'},
+  {key:'Rev3M', label:'P1', fmt:'pct', group:'GROWTH CORRECTIONS', color:'gold', filterId:'fRev3M'},
+  {key:'Rev3M2', label:'P2', fmt:'pct', group:'GROWTH CORRECTIONS', color:'gold', filterId:'fRev3M2'},
+  {key:'Eps3M', label:'P1', fmt:'pct', group:'GROWTH CORRECTIONS', color:'fuchsia', filterId:'fEps3M'},
+  {key:'Eps3M2', label:'P2', fmt:'pct', group:'GROWTH CORRECTIONS', color:'fuchsia', filterId:'fEps3M2'},
+  {key:'R40FCF', label:'GR1', fmt:'r40', group:'GROWTH RATIO', filterId:'fR40FCF'},
+  {key:'R40EBIT', label:'GR2', fmt:'r40', group:'GROWTH RATIO', filterId:'fR40EBIT'},
 ];
+
+// ---- Media tab: cosmetic duplicate of the Screener, relabeled + graded ----
+// Header relabels for the Media tab only: ROIC->M1, FCF->M2, EBIT->M3, EV/S->V1, EV/EBIT->V2, PE->V3
+const MEDIA_LABEL_OVERRIDES = { ROIC:'M1', FCF:'M2', EBIT:'M3', EVS:'V1', EVEBIT:'V2', PE:'V3' };
+// Columns that stay as their raw screener values on the Media tab (never letter-graded)
+const MEDIA_RAW_KEYS = new Set(['Ticker', 'FwdR', 'WoWGrade', 'CompScore']);
+const MEDIA_COLS = COLS.map(c => Object.assign({}, c, {
+  label: MEDIA_LABEL_OVERRIDES.hasOwnProperty(c.key) ? MEDIA_LABEL_OVERRIDES[c.key] : c.label
+}));
+
+// P80-P100 = A ... P0-P19 = E. Percentile is rounded to the nearest whole
+// number before banding, and direction-adjusted so "lower is better" metrics
+// (e.g. valuation multiples) rank the lowest raw values as A, not E.
+function percentileToGrade(rank){
+  const r = Math.round(rank);
+  if(r >= 80) return 'A';
+  if(r >= 60) return 'B';
+  if(r >= 40) return 'C';
+  if(r >= 20) return 'D';
+  return 'E';
+}
+function mediaGradeCellHTML(d, c){
+  const v = d[c.key];
+  const isMissing = (v===null || v===undefined || Number.isNaN(v));
+  if(isMissing) return '<span class="na" title="No data — treated as the worst percentile">&ndash;</span>';
+  const rawRank = percentRank(getSortedVals(c.key), v);
+  if(rawRank==null) return '<span class="na" title="No data — treated as the worst percentile">&ndash;</span>';
+  const dir = DIR_FOR_PERCENTILE[c.key] || 'higher';
+  const adjRank = dir==='lower' ? (100 - rawRank) : rawRank;
+  const letter = percentileToGrade(adjRank);
+  return `<span class="grade grade-${letter}" title="P${Math.round(adjRank)}">${letter}</span>`;
+}
+function mediaCellHTML(d, c){
+  if(c.key==='Ticker') return tickerCellHTML(d.Ticker, d);
+  if(MEDIA_RAW_KEYS.has(c.key)){
+    // Always raw here, independent of the Screener's Raw/Percentile toggle
+    const v = d[c.key];
+    const isMissing = (v===null || v===undefined || Number.isNaN(v));
+    if(isMissing && c.key !== 'WoWGrade') return '<span class="na">&ndash;</span>';
+    return fmt(v, c.fmt, c.key, d);
+  }
+  return mediaGradeCellHTML(d, c);
+}
+let mediaPage = 0;
+function renderMediaTable(){
+  const thead = document.getElementById('theadMedia');
+  if(!thead) return;
+  buildHeaderInto(thead, true, { cols: MEDIA_COLS, showFilters: true, idPrefix: 'media_' });
+  const tbody = document.getElementById('tbodyMedia');
+  tbody.innerHTML = '';
+  const start = mediaPage*PAGE_SIZE;
+  const rows = filtered.slice(start, start+PAGE_SIZE);
+  rows.forEach(d=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = MEDIA_COLS.map(c=>{
+      if(c.key==='Ticker') return `<td class="sticky-col">${mediaCellHTML(d, c)}</td>`;
+      return `<td>${mediaCellHTML(d, c)}</td>`;
+    }).join('');
+    tbody.appendChild(tr);
+  });
+  const totalPages = Math.max(1, Math.ceil(filtered.length/PAGE_SIZE));
+  document.getElementById('mediaPageInfo').textContent = `Page ${mediaPage+1} of ${totalPages} — showing ${rows.length} of ${filtered.length.toLocaleString()}`;
+  document.getElementById('mediaPrevBtn').disabled = mediaPage===0;
+  document.getElementById('mediaNextBtn').disabled = mediaPage>=totalPages-1;
+}
+document.getElementById('mediaPrevBtn').addEventListener('click', ()=>{ if(mediaPage>0){mediaPage--; renderMediaTable();} });
+document.getElementById('mediaNextBtn').addEventListener('click', ()=>{
+  const totalPages = Math.ceil(filtered.length/PAGE_SIZE);
+  if(mediaPage<totalPages-1){mediaPage++; renderMediaTable();}
+});
 
 // Persists filter box values across header rebuilds
 const filterValues = {
@@ -1429,6 +1536,7 @@ function makeSortHandler(key, onSort){
 
 function buildHeaderInto(thead, sortable, opts){
   opts = opts || {};
+  const cols = opts.cols || COLS;
   const activeKey = opts.sortKey !== undefined ? opts.sortKey : sortKey;
   const onSort = opts.onSort || null;
   const showFilters = !!opts.showFilters;
@@ -1452,8 +1560,8 @@ function buildHeaderInto(thead, sortable, opts){
   const totalRows = showFilters ? 3 : 2;
 
   let i = 0;
-  while(i < COLS.length){
-    const c = COLS[i];
+  while(i < cols.length){
+    const c = cols[i];
     if(!c.group){
       const th = document.createElement('th');
       // Label spans group+label rows; filter (if any) sits in the third row
@@ -1535,14 +1643,14 @@ function buildHeaderInto(thead, sortable, opts){
       i++;
     } else {
       let j = i;
-      while(j < COLS.length && COLS[j].group === c.group) j++;
+      while(j < cols.length && cols[j].group === c.group) j++;
       const gth = document.createElement('th');
       gth.colSpan = j - i;
       gth.textContent = c.group;
       gth.className = 'group-hdr' + (c.color ? ' group-'+c.color : '');
       trTop.appendChild(gth);
       for(let k=i;k<j;k++){
-        const cc = COLS[k];
+        const cc = cols[k];
         const sth = document.createElement('th');
         sth.textContent = cc.label;
         sth.dataset.key = cc.key;
@@ -1900,6 +2008,8 @@ function applyAll(resetPage=true){
   applySort();
   if(resetPage) page=0;
   renderTable();
+  if(resetPage) mediaPage=0;
+  if(document.getElementById('mediaView').style.display !== 'none') renderMediaTable();
 }
 
 document.getElementById('search').addEventListener('input', ()=>{ applyAll(); updateHighlights(); });
@@ -1986,9 +2096,11 @@ document.querySelectorAll('.tab').forEach(t=>{
     t.classList.add('active');
     const tab = t.dataset.tab;
     document.getElementById('tableView').style.display = tab==='table'?'block':'none';
+    document.getElementById('mediaView').style.display = tab==='media'?'block':'none';
     document.getElementById('chartView').style.display = tab==='charts'?'block':'none';
     document.getElementById('portfolioView').style.display = tab==='portfolio'?'block':'none';
     document.getElementById('decileView').style.display = tab==='deciles'?'block':'none';
+    if(tab==='media'){ mediaPage = 0; renderMediaTable(); }
     if(tab==='charts') renderCharts();
     if(tab==='portfolio') renderPortfolio();
     if(tab==='deciles') renderDeciles();
