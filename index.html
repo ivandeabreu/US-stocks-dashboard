@@ -455,23 +455,6 @@ tbody tr:last-child td{border-bottom:none;}
 .neg{color:var(--red);}
 .na{color:var(--dim2);}
 
-/* ── Media tab: percentile letter grades ── */
-.grade{
-  display:inline-block;
-  min-width:20px;
-  padding:1px 6px;
-  border-radius:4px;
-  font-family:var(--mono);
-  font-weight:600;
-  font-size:12px;
-  letter-spacing:0.2px;
-}
-.grade-A{color:#00E5FF;background:rgba(0,229,255,0.12);}
-.grade-B{color:var(--green);background:var(--green-soft);}
-.grade-C{color:var(--amber);background:var(--amber-soft);}
-.grade-D{color:#ff9142;background:rgba(255,145,66,0.12);}
-.grade-E{color:var(--red);background:rgba(239,95,95,0.12);}
-
 /* ── Pager ── */
 .pager{
   display:flex;
@@ -710,6 +693,19 @@ tbody td{
   padding-bottom:6px;
   vertical-align:middle;
 }
+
+/* Media tab: percentile letter grades */
+.media-grade{
+  font-weight:600;
+  letter-spacing:0.5px;
+  font-size:12px;
+}
+.media-grade-A{color:var(--cyan);}
+.media-grade-B{color:#BA68C8;}
+.media-grade-C{color:var(--amber);}
+.media-grade-D{color:var(--dim);}
+.media-grade-E{color:var(--red);}
+
 </style>
 </head>
 <body>
@@ -743,7 +739,7 @@ tbody td{
 
     <div class="tabs">
       <div class="tab active" data-tab="table">Screener</div>
-      <div class="tab" data-tab="media">Media</div>
+      <div class="tab" data-tab="media" title="Letter grades from percentile ranks: A=P80–100, B=P60–79, C=P40–59, D=P20–39, E=P0–19">Media</div>
       <div class="tab" data-tab="charts">Charts</div>
       <div class="tab" data-tab="portfolio">Portfolio</div>
       <div class="tab" data-tab="deciles">Percentiles</div>
@@ -767,9 +763,6 @@ tbody td{
   </div>
 
   <div id="mediaView" style="display:none;">
-    <div style="font-family:var(--mono);font-size:10.5px;letter-spacing:0.6px;text-transform:uppercase;color:var(--dim2);margin:0 0 8px;">
-      Media view — same universe as the Screener; margin &amp; valuation metrics shown as percentile letter grades (A = P80&ndash;P100 &hellip; E = P0&ndash;P19). FWD FINAL GRADE, WoW grade and C SCORE remain raw.
-    </div>
     <div class="tablewrap">
       <table>
         <thead id="theadMedia"></thead>
@@ -1063,21 +1056,13 @@ function rowsToObjects(rows) {
     const tUpper = tickerRaw.toUpperCase();
     if (tUpper === "MEDIAN" || tUpper === "MEAN" || tUpper === "TICKER" || tUpper === "N" || /^\d+$/.test(tickerRaw)) continue;
 
-    // Asterisk rule (from original app): tickers whose FWD FY GRADE is the text
-    // "QUARTELY"/"QUARTERLY" (or whose prior-week grade is "NEW") are quarterly
-    // names. They are marked with a trailing * and their week-over-week grade
-    // fields are treated as missing — matching the original embedded dataset.
-    const fyRaw = (idx.FwdRWk1 >= 0 && cells[2] != null) ? String(cells[2]).trim() : "";
-    // Prefer dedicated FY-grade column when header map found it; else positional col 2
-    let fyCell = "";
-    if (idx.FwdR >= 0) {
-      // FWD FINAL is col 8; FWD FY GRADE is typically col 2 (positional)
-    }
+    // Asterisk rule: tickers whose FWD FY GRADE text matches “QUARTERLY”
+    // (case-insensitive) are quarterly names and get a trailing *.
+    // No other condition (e.g. prior-week grade = "NEW") triggers this flag.
+    // WoW grade is taken from Excel column E as-is — not blanked for quarterly names.
     const fyPos = 2; // FWD FY GRADE in QUERY layout
-    const wk1Pos = (idx.FwdRWk1 >= 0) ? idx.FwdRWk1 : 3;
     const fyText = (fyPos < cells.length && cells[fyPos] != null) ? String(cells[fyPos]).trim() : "";
-    const wk1Text = (wk1Pos < cells.length && cells[wk1Pos] != null) ? String(cells[wk1Pos]).trim() : "";
-    const isQuarterly = /quart/i.test(fyText) || /^new$/i.test(wk1Text);
+    const isQuarterly = /quart/i.test(fyText);
 
     let tickerOut = tickerRaw;
     if (isQuarterly && !tickerOut.endsWith("*") && !tickerOut.startsWith("*")) {
@@ -1091,11 +1076,6 @@ function rowsToObjects(rows) {
     for (const k of numKeys) {
       const ci = idx[k];
       d[k] = (ci >= 0 && ci < cells.length) ? cleanNum(cells[ci]) : null;
-    }
-    // Match original HTML behaviour: quarterly names have no usable Wk-1 / WoW grade
-    if (isQuarterly) {
-      d.FwdRWk1 = null;
-      d.WoWGrade = null;
     }
     out.push(d);
   }
@@ -1127,89 +1107,30 @@ const COLS = [
   {key:'EVS', label:'EV/S', fmt:'x', group:'Valuation (NTM)'},
   {key:'EVEBIT', label:'EV/EBIT', fmt:'x', group:'Valuation (NTM)'},
   {key:'PE', label:'PE', fmt:'x', group:'Valuation (NTM)', filterId:'fPE'},
-  {key:'RevY1', label:'P1', fmt:'pct', group:'FWD GROWTH', color:'gold', filterId:'fRevY1'},
-  {key:'RevY2', label:'P2', fmt:'pct', group:'FWD GROWTH', color:'gold', filterId:'fRevY2'},
-  {key:'RevY3', label:'P3', fmt:'pct', group:'FWD GROWTH', color:'gold', filterId:'fRevY3'},
-  {key:'EpsY1', label:'P1', fmt:'pct', group:'FWD GROWTH', color:'fuchsia', filterId:'fEpsY1'},
-  {key:'EpsY2', label:'P2', fmt:'pct', group:'FWD GROWTH', color:'fuchsia', filterId:'fEpsY2'},
-  {key:'EpsY3', label:'P3', fmt:'pct', group:'FWD GROWTH', color:'fuchsia', filterId:'fEpsY3'},
-  {key:'Rev3M', label:'P1', fmt:'pct', group:'GROWTH CORRECTIONS', color:'gold', filterId:'fRev3M'},
-  {key:'Rev3M2', label:'P2', fmt:'pct', group:'GROWTH CORRECTIONS', color:'gold', filterId:'fRev3M2'},
-  {key:'Eps3M', label:'P1', fmt:'pct', group:'GROWTH CORRECTIONS', color:'fuchsia', filterId:'fEps3M'},
-  {key:'Eps3M2', label:'P2', fmt:'pct', group:'GROWTH CORRECTIONS', color:'fuchsia', filterId:'fEps3M2'},
-  {key:'R40FCF', label:'GR1', fmt:'r40', group:'GROWTH RATIO', filterId:'fR40FCF'},
-  {key:'R40EBIT', label:'GR2', fmt:'r40', group:'GROWTH RATIO', filterId:'fR40EBIT'},
+  {key:'RevY1', label:'P1', fmt:'pct', group:'Revenue Est YoY %', color:'gold', filterId:'fRevY1'},
+  {key:'RevY2', label:'P2', fmt:'pct', group:'Revenue Est YoY %', color:'gold', filterId:'fRevY2'},
+  {key:'RevY3', label:'P3', fmt:'pct', group:'Revenue Est YoY %', color:'gold', filterId:'fRevY3'},
+  {key:'EpsY1', label:'P1', fmt:'pct', group:'EPS Est YoY %', color:'fuchsia', filterId:'fEpsY1'},
+  {key:'EpsY2', label:'P2', fmt:'pct', group:'EPS Est YoY %', color:'fuchsia', filterId:'fEpsY2'},
+  {key:'EpsY3', label:'P3', fmt:'pct', group:'EPS Est YoY %', color:'fuchsia', filterId:'fEpsY3'},
+  {key:'Rev3M', label:'P1', fmt:'pct', group:'Revenue Rev', color:'gold', filterId:'fRev3M'},
+  {key:'Rev3M2', label:'P2', fmt:'pct', group:'Revenue Rev', color:'gold', filterId:'fRev3M2'},
+  {key:'Eps3M', label:'P1', fmt:'pct', group:'EPS Rev', color:'fuchsia', filterId:'fEps3M'},
+  {key:'Eps3M2', label:'P2', fmt:'pct', group:'EPS Rev', color:'fuchsia', filterId:'fEps3M2'},
+  {key:'R40FCF', label:'FCF', fmt:'r40', group:'R40', filterId:'fR40FCF'},
+  {key:'R40EBIT', label:'EBIT', fmt:'r40', group:'R40', filterId:'fR40EBIT'},
 ];
 
-// ---- Media tab: cosmetic duplicate of the Screener, relabeled + graded ----
-// Header relabels for the Media tab only: ROIC->M1, FCF->M2, EBIT->M3, EV/S->V1, EV/EBIT->V2, PE->V3
-const MEDIA_LABEL_OVERRIDES = { ROIC:'M1', FCF:'M2', EBIT:'M3', EVS:'V1', EVEBIT:'V2', PE:'V3' };
-// Columns that stay as their raw screener values on the Media tab (never letter-graded)
-const MEDIA_RAW_KEYS = new Set(['Ticker', 'FwdR', 'WoWGrade', 'CompScore']);
-const MEDIA_COLS = COLS.map(c => Object.assign({}, c, {
-  label: MEDIA_LABEL_OVERRIDES.hasOwnProperty(c.key) ? MEDIA_LABEL_OVERRIDES[c.key] : c.label
-}));
-
-// P80-P100 = A ... P0-P19 = E. Percentile is rounded to the nearest whole
-// number before banding, and direction-adjusted so "lower is better" metrics
-// (e.g. valuation multiples) rank the lowest raw values as A, not E.
-function percentileToGrade(rank){
-  const r = Math.round(rank);
-  if(r >= 80) return 'A';
-  if(r >= 60) return 'B';
-  if(r >= 40) return 'C';
-  if(r >= 20) return 'D';
-  return 'E';
-}
-function mediaGradeCellHTML(d, c){
-  const v = d[c.key];
-  const isMissing = (v===null || v===undefined || Number.isNaN(v));
-  if(isMissing) return '<span class="na" title="No data — treated as the worst percentile">&ndash;</span>';
-  const rawRank = percentRank(getSortedVals(c.key), v);
-  if(rawRank==null) return '<span class="na" title="No data — treated as the worst percentile">&ndash;</span>';
-  const dir = DIR_FOR_PERCENTILE[c.key] || 'higher';
-  const adjRank = dir==='lower' ? (100 - rawRank) : rawRank;
-  const letter = percentileToGrade(adjRank);
-  return `<span class="grade grade-${letter}" title="P${Math.round(adjRank)}">${letter}</span>`;
-}
-function mediaCellHTML(d, c){
-  if(c.key==='Ticker') return tickerCellHTML(d.Ticker, d);
-  if(MEDIA_RAW_KEYS.has(c.key)){
-    // Always raw here, independent of the Screener's Raw/Percentile toggle
-    const v = d[c.key];
-    const isMissing = (v===null || v===undefined || Number.isNaN(v));
-    if(isMissing && c.key !== 'WoWGrade') return '<span class="na">&ndash;</span>';
-    return fmt(v, c.fmt, c.key, d);
-  }
-  return mediaGradeCellHTML(d, c);
-}
-let mediaPage = 0;
-function renderMediaTable(){
-  const thead = document.getElementById('theadMedia');
-  if(!thead) return;
-  buildHeaderInto(thead, true, { cols: MEDIA_COLS, showFilters: true, idPrefix: 'media_' });
-  const tbody = document.getElementById('tbodyMedia');
-  tbody.innerHTML = '';
-  const start = mediaPage*PAGE_SIZE;
-  const rows = filtered.slice(start, start+PAGE_SIZE);
-  rows.forEach(d=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = MEDIA_COLS.map(c=>{
-      if(c.key==='Ticker') return `<td class="sticky-col">${mediaCellHTML(d, c)}</td>`;
-      return `<td>${mediaCellHTML(d, c)}</td>`;
-    }).join('');
-    tbody.appendChild(tr);
-  });
-  const totalPages = Math.max(1, Math.ceil(filtered.length/PAGE_SIZE));
-  document.getElementById('mediaPageInfo').textContent = `Page ${mediaPage+1} of ${totalPages} — showing ${rows.length} of ${filtered.length.toLocaleString()}`;
-  document.getElementById('mediaPrevBtn').disabled = mediaPage===0;
-  document.getElementById('mediaNextBtn').disabled = mediaPage>=totalPages-1;
-}
-document.getElementById('mediaPrevBtn').addEventListener('click', ()=>{ if(mediaPage>0){mediaPage--; renderMediaTable();} });
-document.getElementById('mediaNextBtn').addEventListener('click', ()=>{
-  const totalPages = Math.ceil(filtered.length/PAGE_SIZE);
-  if(mediaPage<totalPages-1){mediaPage++; renderMediaTable();}
-});
+// Media tab only: rename selected metric headers. Other tabs keep original labels.
+const MEDIA_COL_LABELS = {
+  ROIC: 'M1',
+  FCF: 'M2',
+  EBIT: 'M3',
+  EVS: 'V1',
+  EVEBIT: 'V2',
+  PE: 'V3',
+};
+const MEDIA_KEEP_RAW = { FwdR:1, WoWGrade:1, CompScore:1 };
 
 // Persists filter box values across header rebuilds
 const filterValues = {
@@ -1536,10 +1457,10 @@ function makeSortHandler(key, onSort){
 
 function buildHeaderInto(thead, sortable, opts){
   opts = opts || {};
-  const cols = opts.cols || COLS;
   const activeKey = opts.sortKey !== undefined ? opts.sortKey : sortKey;
   const onSort = opts.onSort || null;
   const showFilters = !!opts.showFilters;
+  const labelOf = (col) => (opts.labels && opts.labels[col.key]) ? opts.labels[col.key] : col.label;
   // Capture current filter values before wiping the thead
   if(showFilters){
     document.querySelectorAll('input.col-filter').forEach(el=>{
@@ -1560,13 +1481,14 @@ function buildHeaderInto(thead, sortable, opts){
   const totalRows = showFilters ? 3 : 2;
 
   let i = 0;
-  while(i < cols.length){
-    const c = cols[i];
+  while(i < COLS.length){
+    const c = COLS[i];
     if(!c.group){
       const th = document.createElement('th');
       // Label spans group+label rows; filter (if any) sits in the third row
       th.rowSpan = showFilters && c.filterId ? (totalRows - 1) : totalRows;
-      if(c.label.indexOf('<br') >= 0) th.innerHTML = c.label; else th.textContent = c.label;
+      const hdrLabel = labelOf(c);
+      if(String(hdrLabel).indexOf('<br') >= 0) th.innerHTML = hdrLabel; else th.textContent = hdrLabel;
       th.dataset.key = c.key;
       if(c.key==='CompScore') th.classList.add('col-compscore');
       if(sortable && c.key===activeKey) th.classList.add('sorted');
@@ -1643,16 +1565,16 @@ function buildHeaderInto(thead, sortable, opts){
       i++;
     } else {
       let j = i;
-      while(j < cols.length && cols[j].group === c.group) j++;
+      while(j < COLS.length && COLS[j].group === c.group) j++;
       const gth = document.createElement('th');
       gth.colSpan = j - i;
       gth.textContent = c.group;
       gth.className = 'group-hdr' + (c.color ? ' group-'+c.color : '');
       trTop.appendChild(gth);
       for(let k=i;k<j;k++){
-        const cc = cols[k];
+        const cc = COLS[k];
         const sth = document.createElement('th');
-        sth.textContent = cc.label;
+        sth.textContent = labelOf(cc);
         sth.dataset.key = cc.key;
         if(sortable && cc.key===activeKey) sth.classList.add('sorted');
         if(cc.color) sth.classList.add('sub-'+cc.color);
@@ -2001,6 +1923,77 @@ function renderTable(){
   document.getElementById('prevBtn').disabled = page===0;
   document.getElementById('nextBtn').disabled = page>=totalPages-1;
   buildHeader();
+  renderMediaTable();
+}
+
+function mediaLetterGrade(d, c){
+  if(c.key === 'Ticker') return tickerCellHTML(d.Ticker, d);
+  if(MEDIA_KEEP_RAW[c.key]){
+    return fmt(d[c.key], c.fmt, c.key, d);
+  }
+  const v = d[c.key];
+  if(v === null || v === undefined || Number.isNaN(v)){
+    return '<span class="na">–</span>';
+  }
+  const sorted = getSortedVals(c.key);
+  let rank = percentRank(sorted, v);
+  if(rank == null) return '<span class="na">–</span>';
+  // Lower raw value is better for valuation multiples — invert so cheapest = P100 / A
+  if((DIR_FOR_PERCENTILE[c.key] || 'higher') === 'lower'){
+    rank = 100 - rank;
+  }
+  const p = Math.max(0, Math.min(100, Math.round(rank)));
+  let grade = 'E';
+  if(p >= 80) grade = 'A';
+  else if(p >= 60) grade = 'B';
+  else if(p >= 40) grade = 'C';
+  else if(p >= 20) grade = 'D';
+  return `<span class="media-grade media-grade-${grade}" title="P${p}">${grade}</span>`;
+}
+
+function renderMediaTable(){
+  const thead = document.getElementById('theadMedia');
+  const tbody = document.getElementById('tbodyMedia');
+  if(!thead || !tbody) return;
+
+  const active = document.activeElement;
+  const activeDomId = (active && active.classList && active.classList.contains('col-filter') && active.id && active.id.startsWith('media_'))
+    ? active.id : null;
+  const selStart = activeDomId != null ? active.selectionStart : null;
+  const selEnd = activeDomId != null ? active.selectionEnd : null;
+
+  buildHeaderInto(thead, true, {
+    showFilters: true,
+    idPrefix: 'media_',
+    labels: MEDIA_COL_LABELS,
+  });
+
+  if(activeDomId){
+    const el = document.getElementById(activeDomId);
+    if(el){
+      el.focus();
+      try{ if(selStart != null) el.setSelectionRange(selStart, selEnd); }catch(e){}
+    }
+  }
+
+  tbody.innerHTML = '';
+  const start = page*PAGE_SIZE;
+  const rows = filtered.slice(start, start+PAGE_SIZE);
+  rows.forEach(d=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = COLS.map(c=>{
+      if(c.key==='Ticker') return `<td class="sticky-col">${tickerCellHTML(d.Ticker, d)}</td>`;
+      return `<td>${mediaLetterGrade(d, c)}</td>`;
+    }).join('');
+    tbody.appendChild(tr);
+  });
+  const totalPages = Math.max(1, Math.ceil(filtered.length/PAGE_SIZE));
+  const pageInfo = document.getElementById('mediaPageInfo');
+  if(pageInfo) pageInfo.textContent = `Page ${page+1} of ${totalPages} — showing ${rows.length} of ${filtered.length.toLocaleString()}`;
+  const prev = document.getElementById('mediaPrevBtn');
+  const next = document.getElementById('mediaNextBtn');
+  if(prev) prev.disabled = page===0;
+  if(next) next.disabled = page>=totalPages-1;
 }
 
 function applyAll(resetPage=true){
@@ -2008,8 +2001,6 @@ function applyAll(resetPage=true){
   applySort();
   if(resetPage) page=0;
   renderTable();
-  if(resetPage) mediaPage=0;
-  if(document.getElementById('mediaView').style.display !== 'none') renderMediaTable();
 }
 
 document.getElementById('search').addEventListener('input', ()=>{ applyAll(); updateHighlights(); });
@@ -2052,6 +2043,11 @@ document.getElementById('resetBtn').addEventListener('click', ()=>{
 });
 document.getElementById('prevBtn').addEventListener('click', ()=>{ if(page>0){page--; renderTable();} });
 document.getElementById('nextBtn').addEventListener('click', ()=>{
+  const totalPages = Math.ceil(filtered.length/PAGE_SIZE);
+  if(page<totalPages-1){page++; renderTable();}
+});
+document.getElementById('mediaPrevBtn').addEventListener('click', ()=>{ if(page>0){page--; renderTable();} });
+document.getElementById('mediaNextBtn').addEventListener('click', ()=>{
   const totalPages = Math.ceil(filtered.length/PAGE_SIZE);
   if(page<totalPages-1){page++; renderTable();}
 });
@@ -2100,10 +2096,10 @@ document.querySelectorAll('.tab').forEach(t=>{
     document.getElementById('chartView').style.display = tab==='charts'?'block':'none';
     document.getElementById('portfolioView').style.display = tab==='portfolio'?'block':'none';
     document.getElementById('decileView').style.display = tab==='deciles'?'block':'none';
-    if(tab==='media'){ mediaPage = 0; renderMediaTable(); }
     if(tab==='charts') renderCharts();
     if(tab==='portfolio') renderPortfolio();
     if(tab==='deciles') renderDeciles();
+    if(tab==='media') renderMediaTable();
   });
 });
 
