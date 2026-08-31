@@ -1056,13 +1056,21 @@ function rowsToObjects(rows) {
     const tUpper = tickerRaw.toUpperCase();
     if (tUpper === "MEDIAN" || tUpper === "MEAN" || tUpper === "TICKER" || tUpper === "N" || /^\d+$/.test(tickerRaw)) continue;
 
-    // Asterisk rule: tickers whose FWD FY GRADE text matches “QUARTERLY”
-    // (case-insensitive) are quarterly names and get a trailing *.
-    // No other condition (e.g. prior-week grade = "NEW") triggers this flag.
-    // WoW grade is taken from Excel column E as-is — not blanked for quarterly names.
+    // Asterisk rule (from original app): tickers whose FWD FY GRADE is the text
+    // "QUARTELY"/"QUARTERLY" (or whose prior-week grade is "NEW") are quarterly
+    // names. They are marked with a trailing * and their week-over-week grade
+    // fields are treated as missing — matching the original embedded dataset.
+    const fyRaw = (idx.FwdRWk1 >= 0 && cells[2] != null) ? String(cells[2]).trim() : "";
+    // Prefer dedicated FY-grade column when header map found it; else positional col 2
+    let fyCell = "";
+    if (idx.FwdR >= 0) {
+      // FWD FINAL is col 8; FWD FY GRADE is typically col 2 (positional)
+    }
     const fyPos = 2; // FWD FY GRADE in QUERY layout
+    const wk1Pos = (idx.FwdRWk1 >= 0) ? idx.FwdRWk1 : 3;
     const fyText = (fyPos < cells.length && cells[fyPos] != null) ? String(cells[fyPos]).trim() : "";
-    const isQuarterly = /quart/i.test(fyText);
+    const wk1Text = (wk1Pos < cells.length && cells[wk1Pos] != null) ? String(cells[wk1Pos]).trim() : "";
+    const isQuarterly = /quart/i.test(fyText) || /^new$/i.test(wk1Text);
 
     let tickerOut = tickerRaw;
     if (isQuarterly && !tickerOut.endsWith("*") && !tickerOut.startsWith("*")) {
@@ -1076,6 +1084,11 @@ function rowsToObjects(rows) {
     for (const k of numKeys) {
       const ci = idx[k];
       d[k] = (ci >= 0 && ci < cells.length) ? cleanNum(cells[ci]) : null;
+    }
+    // Match original HTML behaviour: quarterly names have no usable Wk-1 / WoW grade
+    if (isQuarterly) {
+      d.FwdRWk1 = null;
+      d.WoWGrade = null;
     }
     out.push(d);
   }
@@ -1129,6 +1142,8 @@ const MEDIA_COL_LABELS = {
   EVS: 'V1',
   EVEBIT: 'V2',
   PE: 'V3',
+  R40FCF: 'GR1',
+  R40EBIT: 'GR2',
 };
 const MEDIA_KEEP_RAW = { FwdR:1, WoWGrade:1, CompScore:1 };
 
