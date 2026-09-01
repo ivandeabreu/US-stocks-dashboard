@@ -1056,21 +1056,13 @@ function rowsToObjects(rows) {
     const tUpper = tickerRaw.toUpperCase();
     if (tUpper === "MEDIAN" || tUpper === "MEAN" || tUpper === "TICKER" || tUpper === "N" || /^\d+$/.test(tickerRaw)) continue;
 
-    // Asterisk rule (from original app): tickers whose FWD FY GRADE is the text
-    // "QUARTELY"/"QUARTERLY" (or whose prior-week grade is "NEW") are quarterly
-    // names. They are marked with a trailing * and their week-over-week grade
-    // fields are treated as missing — matching the original embedded dataset.
-    const fyRaw = (idx.FwdRWk1 >= 0 && cells[2] != null) ? String(cells[2]).trim() : "";
-    // Prefer dedicated FY-grade column when header map found it; else positional col 2
-    let fyCell = "";
-    if (idx.FwdR >= 0) {
-      // FWD FINAL is col 8; FWD FY GRADE is typically col 2 (positional)
-    }
+    // Asterisk rule: tickers whose FWD FY GRADE text matches “QUARTERLY”
+    // (case-insensitive) are quarterly names and get a trailing *.
+    // No other condition (e.g. prior-week grade = "NEW") triggers this flag.
+    // WoW grade is taken from Excel column E as-is — not blanked for quarterly names.
     const fyPos = 2; // FWD FY GRADE in QUERY layout
-    const wk1Pos = (idx.FwdRWk1 >= 0) ? idx.FwdRWk1 : 3;
     const fyText = (fyPos < cells.length && cells[fyPos] != null) ? String(cells[fyPos]).trim() : "";
-    const wk1Text = (wk1Pos < cells.length && cells[wk1Pos] != null) ? String(cells[wk1Pos]).trim() : "";
-    const isQuarterly = /quart/i.test(fyText) || /^new$/i.test(wk1Text);
+    const isQuarterly = /quart/i.test(fyText);
 
     let tickerOut = tickerRaw;
     if (isQuarterly && !tickerOut.endsWith("*") && !tickerOut.startsWith("*")) {
@@ -1084,11 +1076,6 @@ function rowsToObjects(rows) {
     for (const k of numKeys) {
       const ci = idx[k];
       d[k] = (ci >= 0 && ci < cells.length) ? cleanNum(cells[ci]) : null;
-    }
-    // Match original HTML behaviour: quarterly names have no usable Wk-1 / WoW grade
-    if (isQuarterly) {
-      d.FwdRWk1 = null;
-      d.WoWGrade = null;
     }
     out.push(d);
   }
@@ -1142,8 +1129,17 @@ const MEDIA_COL_LABELS = {
   EVS: 'V1',
   EVEBIT: 'V2',
   PE: 'V3',
-  R40FCF: 'GR1',
-  R40EBIT: 'GR2',
+  R40FCF: 'RG1',
+  R40EBIT: 'RG2',
+};
+// Media tab only: remap group headers so consecutive columns merge under shared titles.
+// Screener / Portfolio / Charts / Percentiles continue to use the original COLS.group values.
+const MEDIA_GROUPS = {
+  'Revenue Est YoY %': 'GROWTH',
+  'EPS Est YoY %': 'GROWTH',
+  'Revenue Rev': 'CORRECTION',
+  'EPS Rev': 'CORRECTION',
+  'R40': 'GROWTH RATE',
 };
 const MEDIA_KEEP_RAW = { FwdR:1, WoWGrade:1, CompScore:1 };
 
@@ -1476,6 +1472,15 @@ function buildHeaderInto(thead, sortable, opts){
   const onSort = opts.onSort || null;
   const showFilters = !!opts.showFilters;
   const labelOf = (col) => (opts.labels && opts.labels[col.key]) ? opts.labels[col.key] : col.label;
+  // Optional group remapping (Media tab only). Consecutive columns that share the
+  // same effective group name are merged under a single group header.
+  const groupOf = (col) => {
+    if(!col.group) return null;
+    if(opts.groups && Object.prototype.hasOwnProperty.call(opts.groups, col.group)){
+      return opts.groups[col.group];
+    }
+    return col.group;
+  };
   // Capture current filter values before wiping the thead
   if(showFilters){
     document.querySelectorAll('input.col-filter').forEach(el=>{
@@ -1498,7 +1503,8 @@ function buildHeaderInto(thead, sortable, opts){
   let i = 0;
   while(i < COLS.length){
     const c = COLS[i];
-    if(!c.group){
+    const gName = groupOf(c);
+    if(!gName){
       const th = document.createElement('th');
       // Label spans group+label rows; filter (if any) sits in the third row
       th.rowSpan = showFilters && c.filterId ? (totalRows - 1) : totalRows;
@@ -1580,11 +1586,17 @@ function buildHeaderInto(thead, sortable, opts){
       i++;
     } else {
       let j = i;
-      while(j < COLS.length && COLS[j].group === c.group) j++;
+      while(j < COLS.length && groupOf(COLS[j]) === gName) j++;
       const gth = document.createElement('th');
       gth.colSpan = j - i;
-      gth.textContent = c.group;
-      gth.className = 'group-hdr' + (c.color ? ' group-'+c.color : '');
+      gth.textContent = gName;
+      // Apply group color only when every column in the span shares the same color
+      // (avoids forcing gold/fuchsia on merged Media groups that cross original groups).
+      let groupColor = COLS[i].color || null;
+      for(let k=i;k<j;k++){
+        if((COLS[k].color || null) !== groupColor){ groupColor = null; break; }
+      }
+      gth.className = 'group-hdr' + (groupColor ? ' group-'+groupColor : '');
       trTop.appendChild(gth);
       for(let k=i;k<j;k++){
         const cc = COLS[k];
@@ -1981,6 +1993,7 @@ function renderMediaTable(){
     showFilters: true,
     idPrefix: 'media_',
     labels: MEDIA_COL_LABELS,
+    groups: MEDIA_GROUPS,
   });
 
   if(activeDomId){
